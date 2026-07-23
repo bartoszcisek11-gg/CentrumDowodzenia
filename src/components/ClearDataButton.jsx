@@ -1,24 +1,45 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export default function ClearDataButton() {
-  const handleClear = () => {
-    const potwierdzenie = window.confirm(
-      "⚠️ OSTRZEŻENIE:\nCzy na pewno chcesz bezpowrotnie usunąć WSZYSTKIE dane zapisane na tym komputerze (Finanse, Staż, Notatki itp.)?\n\nPrzed usunięciem warto pobrać kopię zapasową przyciskiem 'Eksport danych'."
+  const [isHovered, setIsHovered] = useState(false);
+
+  const handleClearAll = () => {
+    const confirmed = window.confirm(
+      '⚠️ OSTRZEŻENIE:\nCzy na pewno chcesz usunąć wszystkie dane z aplikacji?\nTej operacji nie można cofnąć, chyba że masz plik kopii zapasowej JSON.'
     );
-    if (potwierdzenie) {
+
+    if (confirmed) {
       localStorage.clear();
-      alert("Wszystkie dane zostały pomyślnie usunięte!");
+      sessionStorage.clear();
+      alert('Wszystkie dane zostały usunięte.');
       window.location.reload();
     }
   };
 
   return (
-    <button 
-      className="btn-clear-all" 
-      onClick={handleClear} 
-      title="Usuwa wszystkie zapisane dane na tym komputerze"
+    <button
+      onClick={handleClearAll}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{
+        position: 'fixed',
+        bottom: '20px',
+        right: '20px',
+        zIndex: 999,
+        padding: '8px 14px',
+        backgroundColor: isHovered ? '#b3261e' : '#21262d', // Jaśniejszy czerwony po najechaniu
+        color: isHovered ? '#ffffff' : '#f85149',
+        border: isHovered ? '1px solid #f85149' : '1px solid #363b42',
+        borderRadius: '6px',
+        fontSize: '0.85rem',
+        fontWeight: 'bold',
+        cursor: 'pointer',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
+        transition: 'all 0.2s ease'
+      }}
+      title="Wyczyść całą bazę danych"
     >
-      🗑️ Wyczyść wszystkie dane
+      🗑️ Wyczyść dane
     </button>
   );
 }
