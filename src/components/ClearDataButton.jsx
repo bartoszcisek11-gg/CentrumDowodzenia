@@ -21,13 +21,14 @@ export default function ClearDataButton() {
       onClick={handleClearAll}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      className="btn-clear-all"
       style={{
         position: 'fixed',
         bottom: '20px',
         right: '20px',
         zIndex: 999,
         padding: '8px 14px',
-        backgroundColor: isHovered ? '#b3261e' : '#21262d', // Jaśniejszy czerwony po najechaniu
+        backgroundColor: isHovered ? '#b3261e' : '#21262d',
         color: isHovered ? '#ffffff' : '#f85149',
         border: isHovered ? '1px solid #f85149' : '1px solid #363b42',
         borderRadius: '6px',

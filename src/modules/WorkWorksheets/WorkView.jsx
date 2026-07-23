@@ -74,10 +74,9 @@ export default function WorkView() {
         newEwidencja[rowIdx][2] = '15:00';
       }
     }
-    
+
     newEwidencja[rowIdx][colIdx] = val;
 
-    // Logika czyszczenia przy wpisaniu nieobecnosci (Uw=kolumna 8, Del=kolumna 14)
     const uwVal = (newEwidencja[rowIdx][8] || '').trim().toUpperCase();
     const delVal = (newEwidencja[rowIdx][14] || '').trim().toUpperCase();
 
@@ -130,10 +129,30 @@ export default function WorkView() {
     <div id="app-4">
       <div className="praca-container">
         <div className="praca-nav-headers">
-          <button className={`praca-nav-tab ${activeTab === 'ewidencja' ? 'active' : ''}`} onClick={() => setActiveTab('ewidencja')}>Ewidencja pracy</button>
-          <button className={`praca-nav-tab ${activeTab === 'dyzury' ? 'active' : ''}`} onClick={() => setActiveTab('dyzury')}>Godziny dyżurowe</button>
-          <button className={`praca-nav-tab ${activeTab === 'szkoleniowy' ? 'active' : ''}`} onClick={() => setActiveTab('szkoleniowy')}>Urlop szkoleniowy</button>
-          <button className={`praca-nav-tab ${activeTab === 'wypoczynkowy' ? 'active' : ''}`} onClick={() => setActiveTab('wypoczynkowy')}>Urlop wypoczynkowy</button>
+          <button
+            className={`praca-nav-tab ${activeTab === 'ewidencja' ? 'active' : ''}`}
+            onClick={() => setActiveTab('ewidencja')}
+          >
+            Ewidencja pracy
+          </button>
+          <button
+            className={`praca-nav-tab ${activeTab === 'dyzury' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dyzury')}
+          >
+            Godziny dyżurowe
+          </button>
+          <button
+            className={`praca-nav-tab ${activeTab === 'szkoleniowy' ? 'active' : ''}`}
+            onClick={() => setActiveTab('szkoleniowy')}
+          >
+            Urlop szkoleniowy
+          </button>
+          <button
+            className={`praca-nav-tab ${activeTab === 'wypoczynkowy' ? 'active' : ''}`}
+            onClick={() => setActiveTab('wypoczynkowy')}
+          >
+            Urlop wypoczynkowy
+          </button>
         </div>
 
         <div id="ewidencja" className={`praca-tab-content ${activeTab === 'ewidencja' ? 'active' : ''}`}>
@@ -170,10 +189,31 @@ export default function WorkView() {
         </div>
 
         <div className="praca-actions">
-          <button type="button" className="praca-btn praca-btn-danger" onClick={czyscMiesiac}>Wyczyść ten miesiąc</button>
-          <button type="button" className="praca-btn praca-btn-primary" onClick={drukujAktywny}>🖨️ Drukuj Aktywną Sekcję</button>
+          <button 
+            type="button" 
+            className="praca-btn praca-btn-danger print-hidden" 
+            onClick={czyscMiesiac}
+          >
+            Wyczyść ten miesiąc
+          </button>
+          <button 
+            type="button" 
+            className="praca-btn praca-btn-primary" 
+            onClick={drukujAktywny}
+          >
+            🖨️ Drukuj Aktywną Sekcję
+          </button>
         </div>
       </div>
+
+      {/* 💡 Ukrywanie przycisku "Wyczyść ten miesiąc" przy drukowaniu */}
+      <style jsx>{`
+        @media print {
+          .print-hidden {
+            display: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }
