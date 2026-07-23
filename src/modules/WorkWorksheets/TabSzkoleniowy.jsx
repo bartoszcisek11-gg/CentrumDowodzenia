@@ -66,8 +66,8 @@ export default function TabSzkoleniowy({ meta, setMeta, szkWniosek, setSzkWniose
             <td>
               <input 
                 type="text" 
-                value={szkWniosek.stanowisko || meta.stanowisko} 
-                onChange={(e) => handleInputChange('stanowisko', e.target.value)} 
+                value={meta.stanowisko} 
+                onChange={(e) => setMeta({ ...meta, stanowisko: e.target.value })} 
               />
             </td>
           </tr>
@@ -76,8 +76,8 @@ export default function TabSzkoleniowy({ meta, setMeta, szkWniosek, setSzkWniose
             <td>
               <input 
                 type="text" 
-                value={szkWniosek.komorka || meta.oddzial} 
-                onChange={(e) => handleInputChange('komorka', e.target.value)} 
+                value={meta.oddzial} 
+                onChange={(e) => setMeta({ ...meta, oddzial: e.target.value })} 
               />
             </td>
           </tr>

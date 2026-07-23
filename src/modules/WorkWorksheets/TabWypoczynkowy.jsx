@@ -30,14 +30,14 @@ export default function TabWypoczynkowy({ meta, setMeta, wypData, setWypData }) 
         <input 
           type="text" 
           style={{ width: '100%' }} 
-          value={wypData.stanowisko || meta.stanowisko} 
-          onChange={(e) => handleInputChange('stanowisko', e.target.value)} 
+          value={meta.stanowisko} 
+          onChange={(e) => setMeta({ ...meta, stanowisko: e.target.value })} 
         /><br />
         <input 
           type="text" 
           style={{ width: '100%' }} 
-          value={wypData.oddzial || meta.oddzial} 
-          onChange={(e) => handleInputChange('oddzial', e.target.value)} 
+          value={meta.oddzial} 
+          onChange={(e) => setMeta({ ...meta, oddzial: e.target.value })} 
         />
       </div>
 

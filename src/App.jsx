@@ -1,5 +1,5 @@
 import './App.css';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LoginModal from './components/LoginModal';
 import MainDashboard from './components/MainDashboard';
 import ClearDataButton from './components/ClearDataButton';
@@ -22,6 +22,22 @@ export default function App() {
   
   // Stan podświetlenia dla przycisku Wyloguj
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
+
+  // Globalna obsługa klawisza Escape
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        if (currentApp !== null) {
+          handleGoHome();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [currentApp]);
 
   if (!isAuthenticated) {
     return <LoginModal onLogin={() => setIsAuthenticated(true)} />;

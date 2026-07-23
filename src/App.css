@@ -5,20 +5,25 @@
 }
 
 :root {
-  --bg-color: #181c24;
-  --card-bg: #222834;
-  --primary: #3498db;
-  --primary-hover: #2980b9;
+  /* Nowa cyberpunkowo-neonowa paleta kolorów */
+  --bg-color: #0b0e14;
+  --card-bg: #111622;
+  --primary: #00f2ff;
+  --primary-hover: #00c8d4;
   --text: #f5f6fa;
-  --text-muted: #8e9aab;
-  --border: #2c3545;
+  --text-muted: #52677d;
+  --border: #1c2b3d;
 
-  --fin-green: #2ecc71;
-  --fin-red: #e74c3c;
-  --danger: #ef4444;
+  --fin-green: #00f2ff;
+  --fin-red: #ff4d4f;
+  --danger: #ff4d4f;
+  
+  /* Przywrócenie soczystej zieleni dla aktywnego stażu */
   --success: #10b981;
-  --active-bg: #112a22;
-  --active-border: #1d5240;
+  --active-bg: #062419;
+  --active-border: #10b981;
+
+  color-scheme: dark;
 }
 
 * {
@@ -44,7 +49,7 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 20px rgba(0, 242, 255, 0.05);
   gap: 15px;
   flex-wrap: wrap;
 }
@@ -57,8 +62,9 @@ header {
 
 header h1 {
   font-size: 1.25rem;
-  font-weight: 600;
-  color: var(--text);
+  font-weight: 700;
+  color: var(--primary);
+  text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
 }
 
 .global-actions {
@@ -69,7 +75,7 @@ header h1 {
 
 .btn-global-io {
   background-color: var(--bg-color);
-  color: var(--text-muted);
+  color: var(--primary);
   border: 1px solid var(--border);
   padding: 6px 12px;
   border-radius: 6px;
@@ -83,31 +89,33 @@ header h1 {
 }
 
 .btn-global-io:hover {
-  background-color: var(--border);
+  background-color: #162232;
+  border-color: var(--primary);
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
   color: white;
 }
 
 .btn-back {
   display: none;
-  background-color: var(--primary);
-  color: white;
+  background: linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%);
+  color: #0b0e14;
   border: none;
   padding: 0.5rem 1rem;
   border-radius: 6px;
   cursor: pointer;
-  font-weight: 500;
-  transition: background 0.2s;
+  font-weight: 700;
+  transition: all 0.2s ease;
 }
 
 .btn-back:hover {
-  background-color: var(--primary-hover);
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.6);
 }
 
 .btn-clear-all {
   position: fixed;
   bottom: 15px;
   right: 15px;
-  background-color: rgba(34, 40, 52, 0.85);
+  background-color: rgba(17, 22, 34, 0.9);
   color: var(--danger);
   border: 1px solid var(--danger);
   padding: 8px 14px;
@@ -125,6 +133,7 @@ header h1 {
   background-color: var(--danger);
   color: white;
   transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(255, 77, 79, 0.5);
 }
 
 main {
@@ -164,7 +173,7 @@ main {
 
 .tile:hover {
   transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  box-shadow: 0 8px 24px rgba(0, 242, 255, 0.15);
   border-color: var(--primary);
 }
 
@@ -191,7 +200,7 @@ main {
   border-radius: 12px;
   padding: 2rem;
   border: 1px solid var(--border);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
 
 .app-view.active {
@@ -221,6 +230,7 @@ main {
   color: var(--primary);
   margin: 0;
   font-size: 1.8rem;
+  text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
 }
 
 #app-2 .btn-help, #app-2 .btn-print {
@@ -239,8 +249,9 @@ main {
 }
 
 #app-2 .btn-help:hover, #app-2 .btn-print:hover {
-  background-color: var(--border);
-  color: var(--text);
+  background-color: #162232;
+  color: var(--primary);
+  border-color: var(--primary);
 }
 
 #app-2 .layout-grid {
@@ -261,14 +272,14 @@ main {
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
   border: 1px solid var(--border);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 #app-2 .summary-card {
-  background: #1a2942;
-  border-color: #2b4c7e;
+  background: #0d1a29;
+  border-color: #183857;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -285,19 +296,20 @@ main {
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #60a5fa;
+  color: var(--primary);
   font-weight: 600;
 }
 
 #app-2 .summary-value {
   font-size: 1.25rem;
   font-weight: 700;
-  color: #93c5fd;
+  color: #a5f3fc;
 }
 
 #app-2 .current-card {
-  background: var(--active-bg);
-  border: 2px solid var(--active-border);
+  background: #062419;
+  border: 1px solid #10b981;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
 }
 
 #app-2 .current-card-header {
@@ -315,14 +327,14 @@ main {
 #app-2 .pulse-dot {
   width: 10px;
   height: 10px;
-  background-color: var(--success);
+  background-color: #10b981;
   border-radius: 50%;
   display: inline-block;
   box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
-  animation: pulse 1.6s infinite;
+  animation: pulseGreen 1.6s infinite;
 }
 
-@keyframes pulse {
+@keyframes pulseGreen {
   0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
   70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
   100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
@@ -348,8 +360,8 @@ main {
   top: 20px;
   display: flex;
   flex-direction: column;
-  background: #252319;
-  border-color: #4a431c;
+  background: #181912;
+  border-color: #3b3a1a;
 }
 
 #app-2 .notes-card h3 {
@@ -364,14 +376,14 @@ main {
 #app-2 textarea.notes-textarea {
   width: 100%;
   height: 420px;
-  border: 1px solid #544b1e;
+  border: 1px solid #4a471b;
   border-radius: 8px;
   padding: 12px;
   font-family: inherit;
   font-size: 0.95rem;
   line-height: 1.6;
   resize: vertical;
-  background-color: #171610;
+  background-color: #10100a;
   color: #fef08a;
   box-sizing: border-box;
   outline: none;
@@ -379,7 +391,7 @@ main {
 
 #app-2 textarea.notes-textarea:focus {
   border-color: #eab308;
-  box-shadow: 0 0 0 2px rgba(234, 179, 8, 0.2);
+  box-shadow: 0 0 10px rgba(234, 179, 8, 0.3);
 }
 
 #app-2 .form-group {
@@ -413,16 +425,16 @@ main {
 }
 
 #app-2 button {
-  background-color: var(--primary);
-  color: white;
+  background: linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%);
+  color: #0b0e14;
   border: none;
   cursor: pointer;
-  font-weight: 600;
-  transition: background 0.2s;
+  font-weight: 700;
+  transition: all 0.2s ease;
 }
 
 #app-2 button:hover {
-  background-color: var(--primary-hover);
+  box-shadow: 0 0 12px rgba(0, 242, 255, 0.5);
 }
 
 #app-2 button.btn-danger {
@@ -445,8 +457,8 @@ main {
 }
 
 #app-2 .staz-item.is-current {
-  border-left-color: var(--success);
-  background: var(--active-bg);
+  border-left: 4px solid #10b981;
+  background: #062419;
 }
 
 #app-2 .drag-handle {
@@ -528,6 +540,7 @@ main {
 #app-2 .badge-active {
   background: #064e3b;
   color: #6ee7b7;
+  border: 1px solid #10b981;
 }
 
 #app-2 .add-event-form {
@@ -548,8 +561,8 @@ main {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(11, 14, 20, 0.85);
+  backdrop-filter: blur(6px);
   display: none;
   justify-content: center;
   align-items: center;
@@ -571,7 +584,7 @@ main {
   max-height: 90vh;
   overflow-y: auto;
   padding: 24px;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 255, 0.1);
   position: relative;
   border: 1px solid var(--border);
 }
@@ -589,6 +602,7 @@ main {
   margin: 0;
   color: var(--primary);
   font-size: 1.3rem;
+  text-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
 }
 
 .btn-close {
@@ -602,7 +616,7 @@ main {
 }
 
 .btn-close:hover {
-  color: var(--text);
+  color: var(--primary);
 }
 
 .modal-body ul {
@@ -632,21 +646,21 @@ main {
 
 .btn-toggle-panel {
   width: 100%;
-  background-color: var(--primary);
-  color: white;
+  background: linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%);
+  color: #0b0e14;
   border: none;
   padding: 12px;
   font-size: 14px;
-  font-weight: bold;
+  font-weight: 700;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.25s ease;
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
+  box-shadow: 0 4px 15px rgba(0, 242, 255, 0.25);
 }
 
 .btn-toggle-panel:hover {
-  background-color: var(--primary-hover);
   transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 242, 255, 0.4);
 }
 
 .form-drawer {
@@ -664,7 +678,7 @@ main {
   opacity: 1;
   padding: 15px;
   border-color: var(--border);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
 }
 
 .form-grid {
@@ -692,20 +706,23 @@ main {
 
 .form-grid input:focus, .form-grid select:focus {
   border-color: var(--primary);
+  box-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
 }
 
 .btn-save {
-  background-color: var(--fin-green);
-  color: white;
+  background: linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%);
+  color: #0b0e14;
   border: none;
   padding: 8px 15px;
-  font-weight: bold;
+  font-weight: 700;
   border-radius: 6px;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
 }
 
-.btn-save:hover { opacity: 0.9; }
+.btn-save:hover { 
+  box-shadow: 0 0 12px rgba(0, 242, 255, 0.5);
+}
 
 .main-tabs {
   display: flex;
@@ -729,6 +746,8 @@ main {
 .tab-btn.active {
   background-color: var(--card-bg);
   color: var(--primary);
+  border: 1px solid var(--border);
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.1);
 }
 
 .tab-content { display: none; }
@@ -753,9 +772,11 @@ main {
 }
 
 .month-btn.active {
-  background-color: var(--primary);
-  color: white;
-  font-weight: bold;
+  background: linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%);
+  color: #0b0e14;
+  font-weight: 700;
+  border-color: var(--primary);
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
 }
 
 .grid-2col {
@@ -769,7 +790,7 @@ main {
   border-radius: 10px;
   padding: 20px;
   border: 1px solid var(--border);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
 }
 
 .tiles-container {
@@ -784,6 +805,7 @@ main {
   padding: 10px;
   border-radius: 8px;
   text-align: center;
+  border: 1px solid var(--border);
 }
 
 .tile-title-fin { font-size: 11px; color: var(--text-muted); text-transform: uppercase; }
@@ -800,7 +822,7 @@ main {
   height: 100%;
   transform: rotateX(22deg);
   transform-style: preserve-3d;
-  filter: drop-shadow(0px 12px 8px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0px 12px 8px rgba(0, 0, 0, 0.6));
   transition: transform 0.3s ease;
 }
 
@@ -838,12 +860,14 @@ main {
   font-family: monospace;
   font-size: 13px;
   cursor: pointer;
-  transition: transform 0.15s, background-color 0.15s, opacity 0.2s;
+  border: 1px solid var(--border);
+  transition: transform 0.15s, background-color 0.15s, border-color 0.15s;
 }
 
 .history-item:hover {
   transform: translateX(4px);
-  background-color: #202630;
+  background-color: #121b28;
+  border-color: var(--primary);
 }
 
 .home-item {
@@ -857,7 +881,7 @@ main {
   width: 18px;
   height: 18px;
   cursor: pointer;
-  accent-color: var(--fin-green);
+  accent-color: var(--primary);
 }
 
 .home-text {
@@ -878,7 +902,8 @@ main {
   background: var(--card-bg);
   padding: 25px;
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
   color: var(--text);
 }
 
@@ -893,7 +918,8 @@ main {
   flex: 1;
   padding: 12px 15px;
   background-color: var(--bg-color);
-  border: none;
+  border: 1px solid var(--border);
+  border-bottom: none;
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
   font-size: 1rem;
@@ -905,13 +931,15 @@ main {
 }
 
 .praca-nav-tab:hover {
-  background-color: var(--border);
+  background-color: #162232;
   color: var(--text);
 }
 
 .praca-nav-tab.active {
-  background-color: var(--primary);
-  color: white;
+  background: linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%);
+  color: #0b0e14;
+  border-color: var(--primary);
+  box-shadow: 0 -2px 10px rgba(0, 242, 255, 0.2);
 }
 
 .praca-tab-content { display: none; }
@@ -1401,19 +1429,29 @@ main {
   font-weight: bold;
   cursor: pointer;
   font-size: 0.9rem;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
 }
 
-.praca-btn-primary { background-color: var(--primary); color: white; }
-.praca-btn-primary:hover { background-color: var(--primary-hover); }
-.praca-btn-danger { background-color: var(--danger); color: white; }
-.praca-btn-danger:hover { background-color: #dc2626; }
+.praca-btn-primary { 
+  background: linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%); 
+  color: #0b0e14; 
+}
+.praca-btn-primary:hover { 
+  box-shadow: 0 0 12px rgba(0, 242, 255, 0.5); 
+}
+.praca-btn-danger { 
+  background-color: var(--danger); 
+  color: white; 
+}
+.praca-btn-danger:hover { 
+  background-color: #dc2626; 
+  box-shadow: 0 0 10px rgba(255, 77, 79, 0.4); 
+}
 
 /* ==========================================================
    STYLE DLA DRUKOWANIA (WIDOK 1:1 Z APILKACJI)
    ========================================================== */
 @media print {
-  /* Reset tła strony */
   body {
     background: white !important;
     color: black !important;
@@ -1423,7 +1461,6 @@ main {
     print-color-adjust: exact !important;
   }
 
-  /* Ukryj elementy nawigacyjne i przyciski interfejsu */
   header, 
   .btn-back, 
   .btn-print, 
@@ -1464,7 +1501,6 @@ main {
     background: white !important;
   }
 
-  /* Pokaż tylko aktywną zakładkę */
   #app-4 .praca-tab-content {
     display: none !important;
   }
@@ -1473,23 +1509,20 @@ main {
     display: block !important;
   }
 
-  /* --- 1. ZAKŁADKA: EWIDENCJA (Poziomo A4) --- */
   #ewidencja.active .karta-ewidencji {
     width: 100% !important;
     max-width: 100% !important;
     padding: 0 !important;
     background: #fff !important;
     color: #000 !important;
-    /* Zachowanie oryginalnych rozmiarów tabeli */
     zoom: 0.96; 
   }
 
   #ewidencja.active .ewidencja-table td, 
   #ewidencja.active .ewidencja-table th {
-    height: 18px !important; /* Przywrócenie oryginalnej wysokości komórek */
+    height: 18px !important;
   }
 
-  /* --- 2. ZAKŁADKA: GODZINY DYŻUROWE (Pionowo A4) --- */
   #dyzury.active .karta-dyzury {
     width: 100% !important;
     max-width: 100% !important;
@@ -1499,7 +1532,6 @@ main {
     zoom: 1;
   }
 
-  /* --- 3. ZAKŁADKA: URLOP SZKOLENIOWY (Pionowo A4) --- */
   #szkoleniowy.active .karta-szkoleniowy {
     width: 100% !important;
     max-width: 100% !important;
@@ -1509,7 +1541,6 @@ main {
     zoom: 0.98;
   }
 
-  /* --- 4. ZAKŁADKA: URLOP WYPOCZYNKOWY (Pionowo A4) --- */
   #wypoczynkowy.active .karta-wypoczynkowy {
     width: 100% !important;
     max-width: 100% !important;
@@ -1519,13 +1550,10 @@ main {
     zoom: 1;
   }
 }
+
 /* ==========================================================
    WYMUSZENIE CIEMNEGO MOTYWU DLA PÓŁ INPUT (FINANSE)
    ========================================================== */
-:root {
-  color-scheme: dark;
-}
-
 #app-3 input,
 #app-3 select,
 #app-3 input[type="date"],
@@ -1538,12 +1566,20 @@ main {
   border-radius: 6px;
   outline: none;
   font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+#app-3 input:focus,
+#app-3 select:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
 }
 
 #app-3 input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(0.8);
   cursor: pointer;
 }
+
 /* ==========================================================
    STYLE DLA KALENDARZA ICLOUD
    ========================================================== */
@@ -1570,7 +1606,7 @@ main {
 }
 
 .react-calendar__navigation button {
-  color: var(--text) !important;
+  color: var(--primary) !important;
   font-size: 1rem;
 }
 
@@ -1591,35 +1627,39 @@ main {
 
 .react-calendar__tile:enabled:hover,
 .react-calendar__tile:enabled:focus {
-  background-color: var(--card-bg) !important;
+  background-color: #121d2b !important;
+  color: var(--primary) !important;
 }
 
 .react-calendar__tile--active {
-  background-color: var(--primary) !important;
-  color: white !important;
+  background: linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%) !important;
+  color: #0b0e14 !important;
+  font-weight: bold;
 }
 
 .react-calendar__tile--now {
-  background-color: #2c3545 !important;
+  background-color: #162638 !important;
+  border: 1px solid var(--primary) !important;
 }
 
-/* Zielona kropka oznaczająca wydarzenie */
 .calendar-event-dot {
   width: 6px;
   height: 6px;
-  background-color: var(--fin-green);
+  background-color: var(--primary);
   border-radius: 50%;
   position: absolute;
   bottom: 4px;
   left: 50%;
   transform: translateX(-50%);
+  box-shadow: 0 0 6px #00f2ff;
 }
+
 /* ==========================================================
    UKŁAD KALENDARZA I PRZYPOMNIEŃ POD KAFELKAMI
    ========================================================== */
 .dashboard-bottom-section {
   display: grid;
-  grid-template-columns: 3fr 1fr; /* Kalendarz bierze szerokość ~3 kafelków, przypomnienia 1 */
+  grid-template-columns: 3fr 1fr;
   gap: 1.5rem;
   margin-top: 2rem;
   align-items: start;
@@ -1627,7 +1667,7 @@ main {
 
 @media (max-width: 1024px) {
   .dashboard-bottom-section {
-    grid-template-columns: 1fr; /* Na mniejszych ekranach układa się pionowo */
+    grid-template-columns: 1fr;
   }
 }
 

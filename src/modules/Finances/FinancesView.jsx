@@ -89,6 +89,15 @@ export default function FinancesView() {
     }));
   };
 
+  // NOWA FUNKCJA: Zaznaczanie / odznaczanie wszystkich wydatków domowych
+  const oplacWszystkieDomowe = () => {
+    const czyWszystkieOplacone = baza.wydatki_domowe.every(w => w.oplacone);
+    setBaza(prev => ({
+      ...prev,
+      wydatki_domowe: prev.wydatki_domowe.map(w => ({ ...w, oplacone: !czyWszystkieOplacone }))
+    }));
+  };
+
   const usunWydatekDomowy = (idx) => {
     if (window.confirm('Czy na pewno chcesz usunąć ten wydatek domowy?')) {
       setBaza(prev => ({ ...prev, wydatki_domowe: prev.wydatki_domowe.filter((_, i) => i !== idx) }));
@@ -113,6 +122,8 @@ export default function FinancesView() {
 
   let sumaNieoplacone = 0;
   baza.wydatki_domowe.forEach(w => { if (!w.oplacone) sumaNieoplacone += w.kwota; });
+
+  const wszystkieDomoweOplacone = baza.wydatki_domowe.length > 0 && baza.wydatki_domowe.every(w => w.oplacone);
 
   return (
     <div id="app-3">
@@ -246,9 +257,29 @@ export default function FinancesView() {
                 </div>
               </div>
 
-              <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase' }}>
-                LISTA WYDATKÓW DOMOWYCH (Podwójne kliknięcie usuwa)
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase' }}>
+                  LISTA WYDATKÓW DOMOWYCH (Podwójne kliknięcie usuwa)
+                </h3>
+                
+                {/* PRZYCISK: Ołacenie / Odznaczenie wszystkich */}
+                {baza.wydatki_domowe.length > 0 && (
+                  <button 
+                    onClick={oplacWszystkieDomowe}
+                    className="btn-save"
+                    style={{
+                      padding: '4px 10px',
+                      fontSize: '0.75rem',
+                      backgroundColor: wszystkieDomoweOplacone ? '#21262d' : 'var(--fin-green)',
+                      border: 'none',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {wszystkieDomoweOplacone ? '↩️ Odznacz wszystkie' : '✅ Opłać wszystkie'}
+                  </button>
+                )}
+              </div>
+
               <div className="history-list">
                 {baza.wydatki_domowe.length === 0 ? (
                   <div style={{ color: 'var(--text-muted)', padding: '20px' }}>Brak dodanych wydatków domowych.</div>
