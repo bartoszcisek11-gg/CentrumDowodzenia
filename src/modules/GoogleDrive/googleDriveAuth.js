@@ -1,6 +1,4 @@
-import firebaseConfig from '../../../firebase-applet-config.json';
-
-const CLIENT_ID = firebaseConfig?.oAuthClientId || '228323924605-2j0u6hork1gfcmqu9mnqrqencm89d2qf.apps.googleusercontent.com';
+const CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '242774672962-gvuvikc5nbn30r4b55hqvvdfhqsqugm9.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file';
 
 let cachedAccessToken = localStorage.getItem('gdrive_token') || null;
@@ -38,9 +36,9 @@ const loadGsiScript = () => {
 export const initAuth = (onAuthSuccess, onAuthFailure) => {
   if (cachedAccessToken && cachedUser) {
     if (onAuthSuccess) onAuthSuccess(cachedUser, cachedAccessToken);
-    } else {
-        if (onAuthFailure) onAuthFailure();
-    }
+  } else {
+    if (onAuthFailure) onAuthFailure();
+  }
   return () => {};
 };
 
