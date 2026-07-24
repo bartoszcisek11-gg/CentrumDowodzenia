@@ -5,7 +5,7 @@ import MainDashboard from './components/MainDashboard';
 import ClearDataButton from './components/ClearDataButton';
 
 // Moduły
-import OrtoBaza from './modules/OrtoBaza/OrtoBazaView';
+import OrtoBazaView from './modules/OrtoBaza/OrtoBazaView';
 import StazView from './modules/StazCalculator/StazView';
 import FinancesView from './modules/Finances/FinancesView';
 import WorkView from './modules/WorkWorksheets/WorkView';
@@ -70,7 +70,7 @@ export default function App() {
   const renderAppContent = () => {
     switch (currentApp) {
       case 'app-1':
-        return <OrtoBaza />;
+        return <OrtoBazaView />; /* POPRAWIONE: OrtoBaza -> OrtoBazaView */
       case 'app-2':
         return <StazView />;
       case 'app-3':

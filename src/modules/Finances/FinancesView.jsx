@@ -89,13 +89,18 @@ export default function FinancesView() {
     }));
   };
 
-  // NOWA FUNKCJA: Zaznaczanie / odznaczanie wszystkich wydatków domowych
   const oplacWszystkieDomowe = () => {
     const czyWszystkieOplacone = baza.wydatki_domowe.every(w => w.oplacone);
     setBaza(prev => ({
       ...prev,
       wydatki_domowe: prev.wydatki_domowe.map(w => ({ ...w, oplacone: !czyWszystkieOplacone }))
     }));
+  };
+
+  const usunWszystkieDomowe = () => {
+    if (window.confirm('⚠️ OSTRZEŻENIE:\nCzy na pewno chcesz usunąć WSZYSTKIE wydatki domowe z listy?')) {
+      setBaza(prev => ({ ...prev, wydatki_domowe: [] }));
+    }
   };
 
   const usunWydatekDomowy = (idx) => {
@@ -257,26 +262,43 @@ export default function FinancesView() {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                 <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase' }}>
                   LISTA WYDATKÓW DOMOWYCH (Podwójne kliknięcie usuwa)
                 </h3>
                 
-                {/* PRZYCISK: Ołacenie / Odznaczenie wszystkich */}
                 {baza.wydatki_domowe.length > 0 && (
-                  <button 
-                    onClick={oplacWszystkieDomowe}
-                    className="btn-save"
-                    style={{
-                      padding: '4px 10px',
-                      fontSize: '0.75rem',
-                      backgroundColor: wszystkieDomoweOplacone ? '#21262d' : 'var(--fin-green)',
-                      border: 'none',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {wszystkieDomoweOplacone ? '↩️ Odznacz wszystkie' : '✅ Opłać wszystkie'}
-                  </button>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button 
+                      onClick={oplacWszystkieDomowe}
+                      className="btn-save"
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '0.75rem',
+                        backgroundColor: wszystkieDomoweOplacone ? '#21262d' : 'var(--fin-green)',
+                        border: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {wszystkieDomoweOplacone ? '↩️ Odznacz wszystkie' : '✅ Opłać wszystkie'}
+                    </button>
+
+                    <button 
+                      onClick={usunWszystkieDomowe}
+                      className="btn-save"
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '0.75rem',
+                        backgroundColor: '#b3261e',
+                        color: '#000000', /* ZMIENIONO: Kolor napisu na czarny */
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontWeight: 'bold'
+                      }}
+                    >
+                      🗑️ Usuń wszystkie
+                    </button>
+                  </div>
                 )}
               </div>
 
