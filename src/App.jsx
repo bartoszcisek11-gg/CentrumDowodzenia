@@ -84,17 +84,31 @@ export default function App() {
 
   return (
     <div className="app-root">
-      <header className="app-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+      <header className="app-header" style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* LEWA STRONA NAGŁÓWKA (Przycisk Powrót) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', zIndex: 2, minHeight: '38px' }}>
           {currentApp && (
             <button onClick={handleGoHome} className="btn-save">
               ⬅️ Powrót
             </button>
           )}
-          <h1>{currentAppTitle || 'Centrum Dowodzenia'}</h1>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+        {/* ŚRODEK NAGŁÓWKA (Wyśrodkowana nazwa aktywnej zakładki / Centrum Dowodzenia) */}
+        <h1 style={{
+          position: 'absolute',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          margin: 0,
+          pointerEvents: 'none',
+          whiteSpace: 'nowrap',
+          zIndex: 1
+        }}>
+          {currentAppTitle || 'Centrum Dowodzenia'}
+        </h1>
+
+        {/* PRAWA STRONA NAGŁÓWKA (Przyciski Import/Eksport/Wyloguj) */}
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', zIndex: 2 }}>
           <button onClick={exportDatabase} className="btn-global-io">
             📥 Eksport JSON
           </button>
