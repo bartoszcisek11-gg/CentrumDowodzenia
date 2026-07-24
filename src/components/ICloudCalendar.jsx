@@ -85,7 +85,7 @@ export default function ICloudCalendar() {
   };
 
   return (
-    <div className="card icloud-calendar-card" style={{ marginTop: '2rem' }}>
+    <div className="card icloud-calendar-card" style={{ marginTop: 0, height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '10px' }}>
         <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
           📅 Kalendarz iCloud {loading && <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>(Synchronizacja...)</span>}

@@ -26,7 +26,7 @@ export default function Reminders() {
   };
 
   return (
-    <div className="reminders-container">
+    <div className="reminders-container" style={{ height: '100%', display: 'flex', flexDirection: 'column', boxSizing: 'border-box' }}>
       <h3 style={{ margin: '0 0 1rem 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
         📌 Przypomnienia
       </h3>
@@ -51,7 +51,7 @@ export default function Reminders() {
         <button type="submit" className="btn-save" style={{ padding: '8px 14px' }}>+</button>
       </form>
 
-      <div className="reminders-list" style={{ maxHeight: '320px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+      <div className="reminders-list" style={{ flex: 1, minHeight: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
         {reminders.length === 0 ? (
           <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Brak aktywnych przypomnień.</p>
         ) : (

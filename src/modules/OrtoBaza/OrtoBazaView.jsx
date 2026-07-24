@@ -35,7 +35,8 @@ export default function OrtoBazaView() {
   // Stany dla efektu hover na przyciskach
   const [isBackHovered, setIsBackHovered] = useState(false);
   const [isAddHovered, setIsAddHovered] = useState(false);
-
+  const [isAddDocHovered, seIsAddDocHovered] = useState(false);
+ 
   // Kolejność Kafelków Menu (Drag and Drop)
   const [tilesOrder, setTilesOrder] = useState(() => {
     return JSON.parse(localStorage.getItem('orto_baza_tiles_order')) || defaultTiles;
@@ -444,24 +445,9 @@ export default function OrtoBazaView() {
               {/* Przycisk Dodaj Wpis z efektami podświetlenia (Hover) */}
               <button
                 onClick={openCreateModal}
-                onMouseEnter={() => setIsAddHovered(true)}
-                onMouseLeave={() => setIsAddHovered(false)}
-                style={{
-                  padding: '10px 20px',
-                  background: isAddHovered 
-                    ? 'linear-gradient(90deg, #00f2ff 0%, #38ef7d 100%)' 
-                    : 'linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%)',
-                  color: '#0b0e14',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  boxShadow: isAddHovered ? '0 0 20px rgba(0, 242, 255, 0.6)' : '0 0 15px rgba(0, 242, 255, 0.3)',
-                  transition: 'all 0.2s ease',
-                  transform: isAddHovered ? 'translateY(-1px)' : 'none'
-                }}
+                className="btn-orto-action"
               >
-                + Dodaj wpis
+                + Nowy wpis
               </button>
             </>
           )}
@@ -739,17 +725,8 @@ export default function OrtoBazaView() {
                     setDocFormTitle('');
                     setDocFormHtml('');
                     setIsDocFormOpen(true);
-                  }}
-                  style={{
-                    padding: '8px 16px',
-                    backgroundColor: '#00f2ff',
-                    color: '#0b0e14',
-                    border: 'none',
-                    borderRadius: '6px',
-                    fontWeight: '700',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem'
-                  }}
+                   }}
+                  className="btn-orto-action"
                 >
                   + Nowy Dokument / Zaświadczenie
                 </button>
@@ -893,21 +870,7 @@ export default function OrtoBazaView() {
 
                       <button
                         onClick={() => handlePrintDoc(doc)}
-                        style={{
-                          width: '100%',
-                          padding: '10px',
-                          backgroundColor: '#1c2b3d',
-                          color: '#00f2ff',
-                          border: '1px solid #00f2ff',
-                          borderRadius: '8px',
-                          fontWeight: '700',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '8px',
-                          transition: 'all 0.2s ease'
-                        }}
+                        className="btn-print-doc"
                       >
                         🖨️ Drukuj / Zapisz jako PDF
                       </button>

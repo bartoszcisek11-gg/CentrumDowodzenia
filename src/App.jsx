@@ -9,6 +9,7 @@ import OrtoBazaView from './modules/OrtoBaza/OrtoBazaView';
 import StazView from './modules/StazCalculator/StazView';
 import FinancesView from './modules/Finances/FinancesView';
 import WorkView from './modules/WorkWorksheets/WorkView';
+import GoogleDriveView from './modules/GoogleDrive/GoogleDriveView';
 
 import { exportDatabase, importDatabase } from './utils/storage';
 
@@ -77,6 +78,8 @@ export default function App() {
         return <FinancesView />;
       case 'app-4':
         return <WorkView />;
+      case 'app-5':
+        return <GoogleDriveView />;
       default:
         return <MainDashboard onOpenApp={handleOpenApp} />;
     }
