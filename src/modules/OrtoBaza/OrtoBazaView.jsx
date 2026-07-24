@@ -889,20 +889,6 @@ export default function OrtoBazaView() {
                           </div>
                         </div>
 
-                        <div 
-                          dangerouslySetInnerHTML={{ __html: doc.content }}
-                          style={{
-                            backgroundColor: '#ffffff',
-                            color: '#000000',
-                            borderRadius: '8px',
-                            padding: '14px',
-                            fontSize: '0.85rem',
-                            fontFamily: "'Times New Roman', Times, serif",
-                            maxHeight: '180px',
-                            overflowY: 'auto',
-                            marginBottom: '15px'
-                          }}
-                        />
                       </div>
 
                       <button
