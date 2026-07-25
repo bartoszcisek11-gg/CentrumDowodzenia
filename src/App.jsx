@@ -67,6 +67,7 @@ export default function App() {
 
   const handleLogout = () => {
     sessionStorage.removeItem('app_authenticated');
+    sessionStorage.removeItem('app_pin');
     setIsAuthenticated(false);
   };
 

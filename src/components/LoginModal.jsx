@@ -14,6 +14,7 @@ export default function LoginModal({ onLogin }) {
 
     if (password === correctPass) {
       sessionStorage.setItem('app_authenticated', 'true');
+      sessionStorage.setItem('app_pin', password);
       onLogin();
     } else {
       setError('Niepoprawne hasło!');
@@ -24,9 +25,17 @@ export default function LoginModal({ onLogin }) {
     const file = e.target.files[0];
     if (!file) return;
 
-    importDatabase(file, () => {
-      window.location.reload();
-    });
+    importDatabase(
+      file,
+      (unlockedPin) => {
+        sessionStorage.setItem('app_authenticated', 'true');
+        if (unlockedPin) {
+          sessionStorage.setItem('app_pin', unlockedPin);
+        }
+        window.location.reload();
+      },
+      password
+    );
   };
 
   // Generowanie kresek dla obrotowego pierścienia SVG

@@ -50,6 +50,10 @@ export function PieChart({ przychody, wydatki }) {
 }
 
 export function LineChart({ stanyKonta }) {
+  return <StanKontaBarChart stanyKonta={stanyKonta} />;
+}
+
+export function StanKontaBarChart({ stanyKonta = [] }) {
   const canvasRef = useRef(null);
   const chartInstance = useRef(null);
 
@@ -60,46 +64,155 @@ export function LineChart({ stanyKonta }) {
     if (chartInstance.current) chartInstance.current.destroy();
     if (!stanyKonta || stanyKonta.length === 0) return;
 
-    const labels = stanyKonta.map(s => s.data);
-    const data = stanyKonta.map(s => s.kwota);
+    const sorted = [...stanyKonta].sort((a, b) => a.data.localeCompare(b.data));
+
+    const MONTH_NAMES_PL = [
+      'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+      'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
+    ];
+
+    const formatMonthLabel = (mStr) => {
+      if (!mStr) return '';
+      const parts = mStr.split('-');
+      if (parts.length >= 2) {
+        const year = parts[0];
+        const monthIdx = parseInt(parts[1], 10) - 1;
+        if (monthIdx >= 0 && monthIdx < 12) {
+          return `${MONTH_NAMES_PL[monthIdx]} ${year}`;
+        }
+      }
+      return mStr;
+    };
+
+    let prevKwota = 0;
+    const barItems = [];
+    const barData = [];
+    const backgroundColors = [];
+    const borderColors = [];
+    const labels = [];
+
+    sorted.forEach((item, idx) => {
+      const currentKwota = parseFloat(item.kwota) || 0;
+      const start = idx === 0 ? 0 : prevKwota;
+      const end = currentKwota;
+      const change = end - start;
+      prevKwota = currentKwota;
+
+      barData.push([Math.min(start, end), Math.max(start, end)]);
+
+      const isPositive = change >= 0;
+      backgroundColors.push(isPositive ? '#3b82f6' : '#f97316');
+      borderColors.push(isPositive ? '#2563eb' : '#ea580c');
+
+      labels.push(formatMonthLabel(item.data));
+
+      barItems.push({
+        data: item.data,
+        change,
+        start,
+        end,
+        isPositive
+      });
+    });
+
+    const waterfallPlugin = {
+      id: 'waterfallLinesAndLabelsStan',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+
+        const meta = chart.getDatasetMeta(0);
+        const bars = meta.data;
+
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+
+        bars.forEach((bar, index) => {
+          if (index === 0) return;
+          const item = barItems[index];
+          if (!item) return;
+
+          const changeFormatted = (item.change >= 0 ? '+' : '') + item.change.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
+
+          const topY = Math.min(bar.y, bar.base);
+          const bottomY = Math.max(bar.y, bar.base);
+
+          if (item.isPositive) {
+            ctx.fillStyle = '#ffffff';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText(changeFormatted, bar.x, topY - 6);
+          } else {
+            ctx.fillStyle = '#ff944d';
+            ctx.textBaseline = 'top';
+            ctx.fillText(changeFormatted, bar.x, bottomY + 6);
+          }
+        });
+
+        ctx.restore();
+      }
+    };
 
     chartInstance.current = new Chart(ctx, {
-      type: 'line',
+      type: 'bar',
       data: {
         labels,
-        datasets: [{
-          label: 'Stan konta',
-          data,
-          borderColor: '#3498db',
-          borderWidth: 3,
-          backgroundColor: 'rgba(52, 152, 219, 0.15)',
-          fill: true,
-          tension: 0.35,
-          pointRadius: 6,
-          pointBackgroundColor: '#3498db',
-          pointHoverRadius: 9,
-          pointHoverBorderWidth: 3,
-          pointHoverBorderColor: '#ffffff'
-        }]
+        datasets: [
+          {
+            label: 'Stan konta',
+            data: barData,
+            backgroundColor: backgroundColors,
+            borderColor: borderColors,
+            borderWidth: 1,
+            borderRadius: 4,
+            borderSkipped: false
+          }
+        ]
       },
+      plugins: [waterfallPlugin],
       options: {
         responsive: true,
         maintainAspectRatio: false,
         scales: {
-          x: { ticks: { color: '#8e9aab' }, grid: { color: '#2c3545' } },
-          y: { ticks: { color: '#8e9aab' }, grid: { color: '#2c3545' } }
+          x: {
+            ticks: { color: '#f5f6fa', font: { size: 12, weight: '500' } },
+            grid: { color: '#2c3545' }
+          },
+          y: {
+            grace: '18%',
+            ticks: {
+              color: '#8e9aab',
+              callback: (val) => val.toLocaleString('pl-PL') + ' zł'
+            },
+            grid: { color: '#2c3545' }
+          }
         },
         plugins: {
+          legend: { display: false },
           tooltip: {
             backgroundColor: '#181c24',
             titleColor: '#f5f6fa',
-            bodyColor: '#3498db',
-            borderColor: '#3498db',
+            borderColor: '#00f2ff',
             borderWidth: 1,
             padding: 10,
-            displayColors: false,
             callbacks: {
-              label: (context) => `Stan konta: ${context.parsed.y.toFixed(2)} zł`
+              title: (tooltipItems) => {
+                const idx = tooltipItems[0].dataIndex;
+                const item = barItems[idx];
+                return formatMonthLabel(item.data);
+              },
+              label: (context) => {
+                const idx = context.dataIndex;
+                const item = barItems[idx];
+                const endFormatted = item.end.toFixed(2) + ' zł';
+                if (idx === 0) {
+                  return [` Stan początkowy: ${endFormatted}`];
+                }
+                const changeFormatted = (item.change >= 0 ? '+' : '') + item.change.toFixed(2) + ' zł';
+                return [
+                  ` Zmiana w miesiącu: ${changeFormatted}`,
+                  ` Stan oszczędności: ${endFormatted}`
+                ];
+              }
             }
           }
         }

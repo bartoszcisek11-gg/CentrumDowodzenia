@@ -34,12 +34,21 @@ export function formatujDate(dataStr) {
 }
 
 export function pracaParsujCzas(str) {
-  if (!str || !str.includes(':')) return null;
-  const parts = str.trim().split(':');
-  const h = parseInt(parts[0], 10);
-  const m = parseInt(parts[1], 10);
-  if (isNaN(h) || isNaN(m)) return null;
-  return h * 60 + m;
+  if (str === null || str === undefined) return null;
+  const s = String(str).trim();
+  if (!s) return null;
+  if (s.includes(':')) {
+    const parts = s.split(':');
+    const h = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (isNaN(h) || isNaN(m)) return null;
+    return h * 60 + m;
+  }
+  const num = parseFloat(s.replace(',', '.'));
+  if (!isNaN(num)) {
+    return Math.round(num * 60);
+  }
+  return null;
 }
 
 export function pracaFormatujCzas(minuty) {

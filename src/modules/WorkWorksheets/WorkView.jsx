@@ -3,6 +3,7 @@ import TabEwidencja from './TabEwidencja';
 import TabDyzury from './TabDyzury';
 import TabSzkoleniowy from './TabSzkoleniowy';
 import TabWypoczynkowy from './TabWypoczynkowy';
+import { pracaObliczKoniecDyzuru } from '../../utils/dateUtils';
 
 export default function WorkView() {
   const [activeTab, setActiveTab] = useState('ewidencja');
@@ -98,9 +99,68 @@ export default function WorkView() {
 
   const handleDyzurChange = (rowIdx, colIdx, val) => {
     const newDyzury = [...(monthData.dyzury || [])];
-    if (!newDyzury[rowIdx]) newDyzury[rowIdx] = [];
+    if (!newDyzury[rowIdx]) newDyzury[rowIdx] = ['', '', '', '', ''];
     newDyzury[rowIdx][colIdx] = val;
+
+    // Auto calculate 'Do godz.' (colIdx 2) when 'Od godz.' (colIdx 1) or 'Ilość godz.' (colIdx 3) changes
+    if (colIdx === 1 || colIdx === 3) {
+      const odGodz = colIdx === 1 ? val : (newDyzury[rowIdx][1] || '15:00');
+      const iloscGodz = colIdx === 3 ? val : newDyzury[rowIdx][3];
+      if (odGodz && iloscGodz) {
+        const doGodz = pracaObliczKoniecDyzuru(odGodz, iloscGodz);
+        if (doGodz) {
+          newDyzury[rowIdx][2] = doGodz;
+        }
+      }
+    }
+
     setMonthData(prev => ({ ...prev, dyzury: newDyzury }));
+  };
+
+  const przeniesDyzuryZEwidencji = () => {
+    const ewidencja = monthData.ewidencja || [];
+    const pad = num => String(num).padStart(2, '0');
+    const monthStr = pad(selectMiesiac + 1);
+    const iloscDni = new Date(selectRok, selectMiesiac + 1, 0).getDate();
+
+    const newDyzury = [];
+    let count = 0;
+
+    for (let dzien = 1; dzien <= iloscDni; dzien++) {
+      const row = ewidencja[dzien - 1];
+      if (!row) continue;
+
+      const dyzurCzas = (row[7] || '').trim(); // colIdx 7 is "na dyżurze"
+      if (dyzurCzas) {
+        const dateObj = new Date(selectRok, selectMiesiac, dzien);
+        const dayIndex = dateObj.getDay();
+        const isWeekend = (dayIndex === 0 || dayIndex === 6);
+
+        const dataStr = `${pad(dzien)}.${monthStr}.${selectRok}`;
+
+        let odGodz = '15:00';
+        if (row[1] && row[1].trim() !== '' && (isWeekend || row[1].trim() !== '07:25')) {
+          odGodz = row[1].trim();
+        }
+
+        const doGodz = pracaObliczKoniecDyzuru(odGodz, dyzurCzas);
+
+        newDyzury.push([dataStr, odGodz, doGodz, dyzurCzas, '']);
+        count++;
+      }
+    }
+
+    if (count === 0) {
+      alert('Nie znaleziono wpisów w kolumnie "na dyżurze" w Ewidencji dla wybranego miesiąca.');
+      return;
+    }
+
+    setMonthData(prev => ({
+      ...prev,
+      dyzury: newDyzury
+    }));
+
+    alert(`Pomyślnie przeniesiono ${count} dyżur(y) z Ewidencji do Karty Dyżurowej!`);
   };
 
   const czyscMiesiac = () => {
@@ -177,6 +237,7 @@ export default function WorkView() {
             dyzuryData={monthData.dyzury || []} 
             onDyzurChange={handleDyzurChange} 
             razemVal={(monthData.dyzury && monthData.dyzury[9]) ? monthData.dyzury[9][0] : ''} 
+            onPrzeniesZEwidencji={przeniesDyzuryZEwidencji}
           />
         </div>
 

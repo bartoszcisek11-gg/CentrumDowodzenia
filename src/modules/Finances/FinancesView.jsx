@@ -16,8 +16,25 @@ export default function FinancesView() {
   const [inputKwota, setInputKwota] = useState('');
   const [inputTyp, setInputTyp] = useState('Przychód');
 
-  const [inputStanData, setInputStanData] = useState(new Date().toISOString().split('T')[0]);
+  const [inputStanData, setInputStanData] = useState(new Date().toISOString().slice(0, 7));
   const [inputStanKwota, setInputStanKwota] = useState('');
+
+  const formatujMiesiacRok = (dataStr) => {
+    if (!dataStr) return '';
+    const parts = dataStr.split('-');
+    if (parts.length >= 2) {
+      const year = parts[0];
+      const monthIdx = parseInt(parts[1], 10) - 1;
+      const monthsPL = [
+        'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+        'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
+      ];
+      if (monthIdx >= 0 && monthIdx < 12) {
+        return `${monthsPL[monthIdx]} ${year}`;
+      }
+    }
+    return dataStr;
+  };
 
   const [inputDomNazwa, setInputDomNazwa] = useState('');
   const [inputDomKwota, setInputDomKwota] = useState('');
@@ -385,7 +402,7 @@ export default function FinancesView() {
             <div className="card">
               <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase' }}>ZAPISZ AKTUALNE SALDO KONTA</h3>
               <div style={{ display: 'flex', gap: '10px', marginBottom: '15px' }}>
-                <input type="date" value={inputStanData} onChange={(e) => setInputStanData(e.target.value)} />
+                <input type="month" value={inputStanData} onChange={(e) => setInputStanData(e.target.value)} />
                 <input type="number" step="0.01" placeholder="0.00 zł" value={inputStanKwota} onChange={(e) => setInputStanKwota(e.target.value)} />
                 <button className="btn-save" onClick={dodajStanKonta}>Zapisz</button>
               </div>
@@ -393,7 +410,7 @@ export default function FinancesView() {
               <div className="history-list">
                 {baza.stany_konta.map((s, idx) => (
                   <div key={idx} className="history-item" onDoubleClick={() => usunStanKonta(idx)}>
-                    <span>{s.data}</span>
+                    <span>{formatujMiesiacRok(s.data)}</span>
                     <span>Stan: {s.kwota.toFixed(2)} zł</span>
                   </div>
                 ))}

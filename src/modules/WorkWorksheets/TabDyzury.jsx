@@ -1,11 +1,12 @@
 import React from 'react';
 import { PRACA_MIESIACE_NAZWY, pracaParsujCzas } from '../../utils/dateUtils';
 
-export default function TabDyzury({ meta, setMeta, selectRok, selectMiesiac, dyzuryData, onDyzurChange, razemVal }) {
+export default function TabDyzury({ meta, setMeta, selectRok, selectMiesiac, dyzuryData, onDyzurChange, razemVal, onPrzeniesZEwidencji }) {
   const rows = [];
   let sumaMinut = 0;
+  const numRows = Math.max(9, dyzuryData.length);
 
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < numRows; i++) {
     const row = dyzuryData[i] || ['', '', '', '', ''];
     const dyzMin = pracaParsujCzas(row[3]);
     if (dyzMin !== null) sumaMinut += dyzMin;
@@ -34,6 +35,26 @@ export default function TabDyzury({ meta, setMeta, selectRok, selectMiesiac, dyz
       <div className="dyzury-title-area">
         <h2>WYKAZ GODZIN DO NALICZENIA WYNAGRODZENIA ZA DYŻURY</h2>
         <div className="sub">/podstawa do dokonania naliczenia i wypłaty wynagrodzeń/</div>
+        {onPrzeniesZEwidencji && (
+          <button 
+            type="button" 
+            className="praca-btn print-hidden"
+            style={{ 
+              marginTop: '10px', 
+              padding: '7px 16px', 
+              fontSize: '12px', 
+              fontWeight: '600',
+              cursor: 'pointer',
+              background: '#0a84ff',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '6px'
+            }}
+            onClick={onPrzeniesZEwidencji}
+          >
+            📋 Przenieś dyżury z ewidencji
+          </button>
+        )}
       </div>
 
       <div className="dyzury-meta-grid">
