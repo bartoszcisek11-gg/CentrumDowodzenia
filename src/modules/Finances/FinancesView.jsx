@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { PieChart, LineChart } from './FinanceCharts';
+import { PieChart, LineChart, InvestmentChart } from './FinanceCharts';
 
 export default function FinancesView() {
   const [baza, setBaza] = useState(() => {
     const saved = JSON.parse(localStorage.getItem('finanse_baza_v4'));
-    return saved || { transakcje: [], stany_konta: [], wydatki_domowe: [] };
+    return saved || { transakcje: [], stany_konta: [], wydatki_domowe: [], inwestycje: [] };
   });
 
   const [activeTab, setActiveTab] = useState('przychody');
@@ -21,6 +21,11 @@ export default function FinancesView() {
 
   const [inputDomNazwa, setInputDomNazwa] = useState('');
   const [inputDomKwota, setInputDomKwota] = useState('');
+
+  const [inputInvNazwa, setInputInvNazwa] = useState('');
+  const [inputInvMiesiac, setInputInvMiesiac] = useState(new Date().toISOString().substring(0, 7));
+  const [inputInvKwota, setInputInvKwota] = useState('');
+  const [inputInvTyp, setInputInvTyp] = useState('Profit');
 
   useEffect(() => {
     localStorage.setItem('finanse_baza_v4', JSON.stringify(baza));
@@ -109,6 +114,37 @@ export default function FinancesView() {
     }
   };
 
+  const dodajInwestycje = () => {
+    const kwotaRaw = parseFloat(inputInvKwota);
+    if (!inputInvNazwa.trim() || !inputInvMiesiac || isNaN(kwotaRaw) || kwotaRaw <= 0) {
+      alert('Wypełnij poprawnie nazwę, miesiąc/rok oraz kwotę!');
+      return;
+    }
+    const floatKwota = inputInvTyp === 'Strata' ? -kwotaRaw : kwotaRaw;
+    const newInv = {
+      id: Date.now().toString(),
+      nazwa: inputInvNazwa.trim(),
+      miesiac: inputInvMiesiac,
+      kwota: floatKwota,
+      typ: inputInvTyp,
+    };
+    const list = [...(baza.inwestycje || []), newInv];
+    list.sort((a, b) => b.miesiac.localeCompare(a.miesiac));
+
+    setBaza(prev => ({ ...prev, inwestycje: list }));
+    setInputInvNazwa('');
+    setInputInvKwota('');
+  };
+
+  const usunInwestycje = (id) => {
+    if (window.confirm('Czy na pewno chcesz usunąć ten wpis inwestycyjny?')) {
+      setBaza(prev => ({
+        ...prev,
+        inwestycje: (prev.inwestycje || []).filter(item => item.id !== id)
+      }));
+    }
+  };
+
   const miesiaceSet = new Set(baza.transakcje.map(t => t.data.substring(0, 7)));
   const miesiace = Array.from(miesiaceSet).sort().reverse();
   const effMiesiac = (!aktywnyMiesiac || !miesiace.includes(aktywnyMiesiac)) ? miesiace[0] : aktywnyMiesiac;
@@ -130,36 +166,48 @@ export default function FinancesView() {
 
   const wszystkieDomoweOplacone = baza.wydatki_domowe.length > 0 && baza.wydatki_domowe.every(w => w.oplacone);
 
+  let sumaInvProfit = 0;
+  let sumaInvStrata = 0;
+  (baza.inwestycje || []).forEach(inv => {
+    const val = Math.abs(parseFloat(inv.kwota) || 0);
+    if (inv.typ === 'Profit' || inv.kwota > 0) {
+      sumaInvProfit += val;
+    } else {
+      sumaInvStrata += val;
+    }
+  });
+  const bilansInv = sumaInvProfit - sumaInvStrata;
+
   return (
     <div id="app-3">
       <div className="app-container">
-        <button className="btn-toggle-panel" onClick={() => setIsFormOpen(!isFormOpen)}>
-          {isFormOpen ? '✕ Zamknij formularz' : '✨ Dodaj nową transakcję (Przychód / Wydatek)'}
-        </button>
-
-        <div className={`form-drawer ${isFormOpen ? 'open' : ''}`}>
-          <div className="form-grid">
-            <label>Data:</label>
-            <input type="date" value={inputData} onChange={(e) => setInputData(e.target.value)} />
-            <label>Opis:</label>
-            <input type="text" placeholder="np. Wynagrodzenie, Zakupy" value={inputOpis} onChange={(e) => setInputOpis(e.target.value)} />
-            <label>Kwota:</label>
-            <input type="number" step="0.01" placeholder="0.00" value={inputKwota} onChange={(e) => setInputKwota(e.target.value)} />
-            <select value={inputTyp} onChange={(e) => setInputTyp(e.target.value)}>
-              <option value="Przychód">Przychód</option>
-              <option value="Wydatek">Wydatek</option>
-            </select>
-            <button className="btn-save" onClick={dodajTransakcje}>Zapisz</button>
-          </div>
-        </div>
-
         <div className="main-tabs">
           <button className={`tab-btn ${activeTab === 'przychody' ? 'active' : ''}`} onClick={() => setActiveTab('przychody')}>Przychody/Wydatki</button>
+          <button className={`tab-btn ${activeTab === 'inwestycje' ? 'active' : ''}`} onClick={() => setActiveTab('inwestycje')}>Inwestycje</button>
           <button className={`tab-btn ${activeTab === 'stan' ? 'active' : ''}`} onClick={() => setActiveTab('stan')}>Stan konta</button>
           <button className={`tab-btn ${activeTab === 'domowe' ? 'active' : ''}`} onClick={() => setActiveTab('domowe')}>Wydatki domowe</button>
         </div>
 
         <div className={`tab-content ${activeTab === 'przychody' ? 'active' : ''}`}>
+          <button className="btn-toggle-panel" onClick={() => setIsFormOpen(!isFormOpen)}>
+            {isFormOpen ? '✕ Zamknij formularz' : '✨ Dodaj nową transakcję (Przychód / Wydatek)'}
+          </button>
+
+          <div className={`form-drawer ${isFormOpen ? 'open' : ''}`}>
+            <div className="form-grid">
+              <label>Data:</label>
+              <input type="date" value={inputData} onChange={(e) => setInputData(e.target.value)} />
+              <label>Opis:</label>
+              <input type="text" placeholder="np. Wynagrodzenie, Zakupy" value={inputOpis} onChange={(e) => setInputOpis(e.target.value)} />
+              <label>Kwota:</label>
+              <input type="number" step="0.01" placeholder="0.00" value={inputKwota} onChange={(e) => setInputKwota(e.target.value)} />
+              <select value={inputTyp} onChange={(e) => setInputTyp(e.target.value)}>
+                <option value="Przychód">Przychód</option>
+                <option value="Wydatek">Wydatek</option>
+              </select>
+              <button className="btn-save" onClick={dodajTransakcje}>Zapisz</button>
+            </div>
+          </div>
           <div className="month-tabs">
             {miesiace.map(m => (
               <button key={m} className={`month-btn ${m === effMiesiac ? 'active' : ''}`} onClick={() => setAktywnyMiesiac(m)}>{m}</button>
@@ -214,6 +262,119 @@ export default function FinancesView() {
                   <PieChart przychody={sumaP} wydatki={sumaW} />
                 </div>
                 <div className="chart-center-label">{(sumaP > 0 || sumaW > 0) ? `${pct}%` : ''}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={`tab-content ${activeTab === 'inwestycje' ? 'active' : ''}`}>
+          <div className="grid-2col">
+            <div className="card">
+              <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase' }}>
+                DODAJ PROFIT / STRATĘ Z INWESTYCJI
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                <input
+                  type="text"
+                  placeholder="Nazwa inwestycji (np. Krypto, Akcje, ETF, Nieruchomość)"
+                  value={inputInvNazwa}
+                  onChange={(e) => setInputInvNazwa(e.target.value)}
+                />
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: '130px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Miesiąc i Rok:</label>
+                    <input
+                      type="month"
+                      value={inputInvMiesiac}
+                      onChange={(e) => setInputInvMiesiac(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: '130px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Typ wpisu:</label>
+                    <select
+                      value={inputInvTyp}
+                      onChange={(e) => setInputInvTyp(e.target.value)}
+                    >
+                      <option value="Profit">🟢 Profit / Zysk (+)</option>
+                      <option value="Strata">🔴 Strata (-)</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Kwota (zł)"
+                    style={{ flexGrow: 1 }}
+                    value={inputInvKwota}
+                    onChange={(e) => setInputInvKwota(e.target.value)}
+                  />
+                  <button className="btn-save" onClick={dodajInwestycje}>
+                    Zapisz
+                  </button>
+                </div>
+              </div>
+
+              <div className="tiles-container" style={{ marginBottom: '15px' }}>
+                <div className="tile-fin">
+                  <div className="tile-title-fin">Łączny Zysk</div>
+                  <div className="tile-value-fin" style={{ color: 'var(--fin-green)' }}>
+                    +{sumaInvProfit.toFixed(2)} zł
+                  </div>
+                </div>
+                <div className="tile-fin">
+                  <div className="tile-title-fin">Łączna Strata</div>
+                  <div className="tile-value-fin" style={{ color: 'var(--fin-red)' }}>
+                    -{sumaInvStrata.toFixed(2)} zł
+                  </div>
+                </div>
+                <div className="tile-fin">
+                  <div className="tile-title-fin">Bilans Netto</div>
+                  <div className="tile-value-fin" style={{ color: bilansInv >= 0 ? 'var(--fin-green)' : 'var(--fin-red)' }}>
+                    {bilansInv >= 0 ? '+' : ''}{bilansInv.toFixed(2)} zł
+                  </div>
+                </div>
+              </div>
+
+              <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase' }}>
+                HISTORIA INWESTYCJI (Podwójne kliknięcie usuwa)
+              </h3>
+              <div className="history-list">
+                {(baza.inwestycje || []).length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', padding: '20px' }}>Brak wpisów o inwestycjach.</div>
+                ) : (
+                  (baza.inwestycje || []).map((inv) => {
+                    const isProfit = inv.typ === 'Profit' || inv.kwota > 0;
+                    return (
+                      <div
+                        key={inv.id || inv.nazwa + inv.miesiac}
+                        className="history-item"
+                        style={{ color: isProfit ? 'var(--fin-green)' : 'var(--fin-red)' }}
+                        onDoubleClick={() => usunInwestycje(inv.id)}
+                      >
+                        <span>{inv.miesiac} | {inv.nazwa}</span>
+                        <span style={{ fontWeight: 'bold' }}>
+                          {isProfit ? '+' : '-'}{Math.abs(inv.kwota).toFixed(2)} zł
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="card">
+              <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textAlign: 'center', textTransform: 'uppercase' }}>
+                ZYSK I STRATA ŁĄCZNIE NA PRZESTRZENI MIESIĘCY
+              </h3>
+              <div style={{ height: '340px', position: 'relative' }}>
+                {(baza.inwestycje || []).length === 0 ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)' }}>
+                    Dodaj pierwsze wpisy inwestycyjne, aby wyświetlić wykres.
+                  </div>
+                ) : (
+                  <InvestmentChart inwestycje={baza.inwestycje || []} />
+                )}
               </div>
             </div>
           </div>

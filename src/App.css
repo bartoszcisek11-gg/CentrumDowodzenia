@@ -799,7 +799,13 @@ main {
   padding: 8px 16px;
   cursor: pointer;
   border-radius: 6px;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+  background-color: rgba(0, 242, 255, 0.08);
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.2);
 }
 
 .tab-btn.active {
@@ -815,6 +821,7 @@ main {
 .month-tabs {
   display: flex;
   gap: 5px;
+  margin-top: 12px;
   margin-bottom: 15px;
   overflow-x: auto;
   padding-bottom: 5px;
@@ -1628,6 +1635,7 @@ main {
 #app-3 input,
 #app-3 select,
 #app-3 input[type="date"],
+#app-3 input[type="month"],
 #app-3 input[type="number"],
 #app-3 input[type="text"] {
   background-color: var(--bg-color) !important;
@@ -1646,7 +1654,8 @@ main {
   box-shadow: 0 0 8px rgba(0, 242, 255, 0.3);
 }
 
-#app-3 input[type="date"]::-webkit-calendar-picker-indicator {
+#app-3 input[type="date"]::-webkit-calendar-picker-indicator,
+#app-3 input[type="month"]::-webkit-calendar-picker-indicator {
   filter: invert(0.8);
   cursor: pointer;
 }
