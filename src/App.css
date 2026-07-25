@@ -1677,13 +1677,14 @@ main {
 }
 
 .react-calendar__navigation button {
-  color: var(--primary) !important;
+  color: #ffffff !important;
   font-size: 1rem;
 }
 
 .react-calendar__navigation button:enabled:hover,
 .react-calendar__navigation button:enabled:focus {
   background-color: var(--card-bg) !important;
+  color: #ffffff !important;
 }
 
 .react-calendar__month-view__weekdays__weekday {
@@ -1691,38 +1692,47 @@ main {
 }
 
 .react-calendar__tile {
-  color: var(--text) !important;
+  color: #ffffff !important;
   border-radius: 6px;
   position: relative;
 }
 
 .react-calendar__tile:enabled:hover,
 .react-calendar__tile:enabled:focus {
-  background-color: #121d2b !important;
-  color: var(--primary) !important;
+  background-color: #21262d !important;
+  color: #ffffff !important;
 }
 
 .react-calendar__tile--active {
-  background: linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%) !important;
-  color: #0b0e14 !important;
+  background: #253346 !important;
+  color: #ffffff !important;
   font-weight: bold;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
 }
 
 .react-calendar__tile--now {
   background-color: #162638 !important;
-  border: 1px solid var(--primary) !important;
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
+  font-weight: bold;
+}
+
+.react-calendar__tile--now.react-calendar__tile--active {
+  background-color: #1c324a !important;
+  border: 1px solid #ffffff !important;
+  color: #ffffff !important;
 }
 
 .calendar-event-dot {
   width: 6px;
   height: 6px;
-  background-color: var(--primary);
+  background-color: #ffffff;
   border-radius: 50%;
   position: absolute;
   bottom: 4px;
   left: 50%;
   transform: translateX(-50%);
-  box-shadow: 0 0 6px #00f2ff;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.8);
 }
 
 /* ==========================================================
@@ -1779,6 +1789,8 @@ main {
   padding: 4px 8px;
   border-radius: 6px;
   transition: background 0.2s;
+  user-select: none;
+  touch-action: none;
 }
 
 .widget-drag-handle:hover {
@@ -1965,109 +1977,4 @@ main {
   box-shadow: 0 0 10px rgba(0, 242, 255, 0.4) !important;
 }
 
-/* Wiersze tabeli Google Drive */
-.drive-row:hover {
-  background-color: rgba(0, 242, 255, 0.08) !important;
-}
-
-/* Przycisk Nowy Folder w Google Drive */
-.btn-gdrive-folder {
-  padding: 10px 20px !important;
-  background-color: #1c2b3d !important;
-  color: #00f2ff !important;
-  border: 1px solid #00f2ff !important;
-  border-radius: 8px !important;
-  font-weight: 700 !important;
-  font-size: 0.9rem !important;
-  cursor: pointer !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 6px !important;
-  box-shadow: 0 0 8px rgba(0, 242, 255, 0.2) !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  user-select: none !important;
-  box-sizing: border-box !important;
-}
-
-.btn-gdrive-folder:hover {
-  background-color: #00f2ff !important;
-  color: #0b0e14 !important;
-  box-shadow: 0 0 20px rgba(0, 242, 255, 0.7) !important;
-  transform: translateY(-2px) !important;
-}
-
-.btn-gdrive-folder:active {
-  transform: translateY(0) !important;
-  box-shadow: 0 0 10px rgba(0, 242, 255, 0.4) !important;
-}
-
-/* Przycisk Odłącz Drive / Odłącz Gmail / Usuń z jednakową wysokością i dopasowaniem */
-.btn-gdrive-disconnect, .btn-gmail-disconnect, .btn-gmail-danger {
-  height: 36px !important;
-  padding: 0 14px !important;
-  background-color: #21262d !important;
-  color: #f85149 !important;
-  border: 1px solid #f85149 !important;
-  border-radius: 8px !important;
-  font-weight: 700 !important;
-  font-size: 0.85rem !important;
-  cursor: pointer !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 6px !important;
-  box-shadow: 0 0 8px rgba(248, 81, 73, 0.2) !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  user-select: none !important;
-  box-sizing: border-box !important;
-  line-height: 1 !important;
-}
-
-.btn-gdrive-disconnect:hover, .btn-gmail-disconnect:hover, .btn-gmail-danger:hover {
-  background-color: #da3633 !important;
-  color: #ffffff !important;
-  border-color: #f85149 !important;
-  box-shadow: 0 0 20px rgba(248, 81, 73, 0.7) !important;
-  transform: translateY(-2px) !important;
-}
-
-.btn-gdrive-disconnect:active, .btn-gmail-disconnect:active, .btn-gmail-danger:active {
-  transform: translateY(0) !important;
-  box-shadow: 0 0 10px rgba(248, 81, 73, 0.4) !important;
-}
-
-/* Przycisk Napisz wiadomość w Gmail z dynamicznym podświetleniem po najechaniu (hover) */
-.btn-gmail-compose {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 10px !important;
-  background: linear-gradient(135deg, #1f6beb 0%, #1553b7 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid #388bfd !important;
-  padding: 12px 18px !important;
-  border-radius: 12px !important;
-  font-weight: 700 !important;
-  font-size: 0.95rem !important;
-  cursor: pointer !important;
-  box-shadow: 0 2px 10px rgba(31, 107, 235, 0.4) !important;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  user-select: none !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
-}
-
-.btn-gmail-compose:hover {
-  background: linear-gradient(135deg, #388bfd 0%, #00f2ff 100%) !important;
-  color: #0b0e14 !important;
-  border-color: #00f2ff !important;
-  box-shadow: 0 0 22px rgba(0, 242, 255, 0.75), 0 4px 14px rgba(31, 107, 235, 0.6) !important;
-  transform: translateY(-2px) !important;
-}
-
-.btn-gmail-compose:active {
-  transform: translateY(0) !important;
-  box-shadow: 0 0 10px rgba(0, 242, 255, 0.4) !important;
-}
 

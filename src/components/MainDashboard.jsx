@@ -39,6 +39,9 @@ function ResizableWidget({
   onSectionDragLeave,
   onSectionDrop,
   onSectionDragEnd,
+  onSectionTouchStart,
+  onSectionTouchMove,
+  onSectionTouchEnd,
   isSectionDragging,
   isSectionDragOver,
   defaultWidth = '100%',
@@ -134,6 +137,7 @@ function ResizableWidget({
   return (
     <div
       ref={widgetRef}
+      data-section-id={id}
       className={`dashboard-widget-card ${isSectionDragging ? 'section-dragging' : ''} ${isSectionDragOver ? 'drag-over' : ''}`}
       style={style}
       onDragOver={(e) => onSectionDragOver(e, id)}
@@ -146,6 +150,9 @@ function ResizableWidget({
           draggable
           onDragStart={(e) => onSectionDragStart(e, id)}
           onDragEnd={onSectionDragEnd}
+          onTouchStart={(e) => onSectionTouchStart && onSectionTouchStart(e, id)}
+          onTouchMove={(e) => onSectionTouchMove && onSectionTouchMove(e, id)}
+          onTouchEnd={(e) => onSectionTouchEnd && onSectionTouchEnd(e, id)}
           title="Przeciągnij uchwyt, aby zmienić kolejność tej sekcji"
         >
           <span className="drag-dots">⋮⋮</span>
@@ -215,6 +222,28 @@ export default function MainDashboard({ onOpenApp }) {
   const [draggedSection, setDraggedSection] = useState(null);
   const [dragOverSection, setDragOverSection] = useState(null);
 
+  const moveSection = (sourceSectionId, targetSectionId) => {
+    if (!sourceSectionId || sourceSectionId === targetSectionId) {
+      setDraggedSection(null);
+      setDragOverSection(null);
+      return;
+    }
+
+    const updated = [...sectionsOrder];
+    const sourceIdx = updated.indexOf(sourceSectionId);
+    const targetIdx = updated.indexOf(targetSectionId);
+
+    if (sourceIdx !== -1 && targetIdx !== -1) {
+      updated.splice(sourceIdx, 1);
+      updated.splice(targetIdx, 0, sourceSectionId);
+      setSectionsOrder(updated);
+      localStorage.setItem('dashboard_sections_order', JSON.stringify(updated));
+    }
+
+    setDraggedSection(null);
+    setDragOverSection(null);
+  };
+
   const handleSectionDragStart = (e, sectionId) => {
     e.stopPropagation();
     setDraggedSection(sectionId);
@@ -239,31 +268,84 @@ export default function MainDashboard({ onOpenApp }) {
   const handleSectionDrop = (e, targetSectionId) => {
     e.preventDefault();
     const sourceSectionId = e.dataTransfer.getData('text/section-id') || draggedSection;
-
-    if (!sourceSectionId || sourceSectionId === targetSectionId) {
-      setDraggedSection(null);
-      setDragOverSection(null);
-      return;
-    }
-
-    const updated = [...sectionsOrder];
-    const sourceIdx = updated.indexOf(sourceSectionId);
-    const targetIdx = updated.indexOf(targetSectionId);
-
-    if (sourceIdx !== -1 && targetIdx !== -1) {
-      updated.splice(sourceIdx, 1);
-      updated.splice(targetIdx, 0, sourceSectionId);
-      setSectionsOrder(updated);
-      localStorage.setItem('dashboard_sections_order', JSON.stringify(updated));
-    }
-
-    setDraggedSection(null);
-    setDragOverSection(null);
+    moveSection(sourceSectionId, targetSectionId);
   };
 
   const handleSectionDragEnd = () => {
     setDraggedSection(null);
     setDragOverSection(null);
+  };
+
+  const sectionTouchRef = useRef({
+    startX: 0,
+    startY: 0,
+    sectionId: null,
+    isDragging: false,
+  });
+
+  const handleSectionTouchStart = (e, sectionId) => {
+    const touch = e.touches[0];
+    sectionTouchRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      sectionId: sectionId,
+      isDragging: false,
+    };
+  };
+
+  const handleSectionTouchMove = (e, sectionId) => {
+    const state = sectionTouchRef.current;
+    if (state.sectionId === null) return;
+
+    const touch = e.touches[0];
+    const dx = touch.clientX - state.startX;
+    const dy = touch.clientY - state.startY;
+
+    if (!state.isDragging && Math.hypot(dx, dy) > 8) {
+      state.isDragging = true;
+      setDraggedSection(sectionId);
+    }
+
+    if (state.isDragging) {
+      if (e.cancelable) e.preventDefault();
+      const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (elem) {
+        const secElem = elem.closest('[data-section-id]');
+        if (secElem) {
+          const targetSection = secElem.getAttribute('data-section-id');
+          if (targetSection && targetSection !== sectionId && dragOverSection !== targetSection) {
+            setDragOverSection(targetSection);
+          }
+        }
+      }
+    }
+  };
+
+  const handleSectionTouchEnd = (e, sectionId) => {
+    const state = sectionTouchRef.current;
+    if (state.isDragging) {
+      let target = dragOverSection;
+      if (!target && e.changedTouches && e.changedTouches.length > 0) {
+        const touch = e.changedTouches[0];
+        const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (elem) {
+          const secElem = elem.closest('[data-section-id]');
+          if (secElem) target = secElem.getAttribute('data-section-id');
+        }
+      }
+      if (target) {
+        moveSection(sectionId, target);
+      } else {
+        setDraggedSection(null);
+        setDragOverSection(null);
+      }
+    } else {
+      setDraggedSection(null);
+      setDragOverSection(null);
+    }
+
+    state.sectionId = null;
+    state.isDragging = false;
   };
 
   // STAN I OBSŁUGA KAFELKÓW (TILES GRID)
@@ -333,6 +415,31 @@ export default function MainDashboard({ onOpenApp }) {
     localStorage.setItem('dashboard_slots_map', JSON.stringify(plainMap));
   };
 
+  const moveTile = (sourceSlotIdx, targetSlotIdx) => {
+    if (sourceSlotIdx === null || sourceSlotIdx === undefined || isNaN(sourceSlotIdx) || sourceSlotIdx === targetSlotIdx) {
+      setDraggedSlot(null);
+      setDragOverSlot(null);
+      return;
+    }
+
+    const updated = { ...slotMap };
+    const sourceTile = updated[sourceSlotIdx];
+    const targetTile = updated[targetSlotIdx];
+
+    if (sourceTile) {
+      updated[targetSlotIdx] = sourceTile;
+      if (targetTile) {
+        updated[sourceSlotIdx] = targetTile;
+      } else {
+        delete updated[sourceSlotIdx];
+      }
+      saveSlotsMap(updated);
+    }
+
+    setDraggedSlot(null);
+    setDragOverSlot(null);
+  };
+
   const handleTileDragStart = (e, slotIdx) => {
     e.stopPropagation();
     setDraggedSlot(slotIdx);
@@ -362,34 +469,89 @@ export default function MainDashboard({ onOpenApp }) {
     e.stopPropagation();
     const sourceSlotIdxStr = e.dataTransfer.getData('text/tile-slot');
     const sourceSlotIdx = sourceSlotIdxStr !== '' ? parseInt(sourceSlotIdxStr, 10) : draggedSlot;
-
-    if (sourceSlotIdx === null || isNaN(sourceSlotIdx) || sourceSlotIdx === targetSlotIdx) {
-      setDraggedSlot(null);
-      setDragOverSlot(null);
-      return;
-    }
-
-    const updated = { ...slotMap };
-    const sourceTile = updated[sourceSlotIdx];
-    const targetTile = updated[targetSlotIdx];
-
-    if (sourceTile) {
-      updated[targetSlotIdx] = sourceTile;
-      if (targetTile) {
-        updated[sourceSlotIdx] = targetTile;
-      } else {
-        delete updated[sourceSlotIdx];
-      }
-      saveSlotsMap(updated);
-    }
-
-    setDraggedSlot(null);
-    setDragOverSlot(null);
+    moveTile(sourceSlotIdx, targetSlotIdx);
   };
 
   const handleTileDragEnd = () => {
     setDraggedSlot(null);
     setDragOverSlot(null);
+  };
+
+  const tileTouchRef = useRef({
+    startX: 0,
+    startY: 0,
+    slotIdx: null,
+    isDragging: false,
+    justDragged: false,
+  });
+
+  const handleTileTouchStart = (e, slotIdx) => {
+    const touch = e.touches[0];
+    tileTouchRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      slotIdx: slotIdx,
+      isDragging: false,
+      justDragged: false,
+    };
+  };
+
+  const handleTileTouchMove = (e, slotIdx) => {
+    const state = tileTouchRef.current;
+    if (state.slotIdx === null) return;
+
+    const touch = e.touches[0];
+    const dx = touch.clientX - state.startX;
+    const dy = touch.clientY - state.startY;
+
+    if (!state.isDragging && Math.hypot(dx, dy) > 8) {
+      state.isDragging = true;
+      setDraggedSlot(slotIdx);
+    }
+
+    if (state.isDragging) {
+      if (e.cancelable) e.preventDefault();
+      const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (elem) {
+        const slotElem = elem.closest('[data-slot-idx]');
+        if (slotElem) {
+          const targetSlot = parseInt(slotElem.getAttribute('data-slot-idx'), 10);
+          if (!isNaN(targetSlot) && dragOverSlot !== targetSlot) {
+            setDragOverSlot(targetSlot);
+          }
+        }
+      }
+    }
+  };
+
+  const handleTileTouchEnd = (e, slotIdx) => {
+    const state = tileTouchRef.current;
+    if (state.isDragging) {
+      state.justDragged = true;
+      let targetSlot = dragOverSlot;
+      if (targetSlot === null && e.changedTouches && e.changedTouches.length > 0) {
+        const touch = e.changedTouches[0];
+        const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+        if (elem) {
+          const slotElem = elem.closest('[data-slot-idx]');
+          if (slotElem) {
+            targetSlot = parseInt(slotElem.getAttribute('data-slot-idx'), 10);
+          }
+        }
+      }
+      if (targetSlot !== null && !isNaN(targetSlot)) {
+        moveTile(slotIdx, targetSlot);
+      } else {
+        setDraggedSlot(null);
+        setDragOverSlot(null);
+      }
+    } else {
+      setDraggedSlot(null);
+      setDragOverSlot(null);
+    }
+
+    state.slotIdx = null;
+    state.isDragging = false;
   };
 
   const occupiedIndices = Object.keys(slotMap).map(Number);
@@ -416,6 +578,9 @@ export default function MainDashboard({ onOpenApp }) {
           onSectionDragLeave={handleSectionDragLeave}
           onSectionDrop={handleSectionDrop}
           onSectionDragEnd={handleSectionDragEnd}
+          onSectionTouchStart={handleSectionTouchStart}
+          onSectionTouchMove={handleSectionTouchMove}
+          onSectionTouchEnd={handleSectionTouchEnd}
           isSectionDragging={draggedSection === 'tiles'}
           isSectionDragOver={dragOverSection === 'tiles'}
           defaultWidth="100%"
@@ -432,6 +597,7 @@ export default function MainDashboard({ onOpenApp }) {
                 return (
                   <div
                     key={`slot-tile-${slotIdx}-${tile.id}`}
+                    data-slot-idx={slotIdx}
                     className={`tile ${isDraggingThis ? 'dragging' : ''} ${isDragOverThis ? 'drag-over' : ''}`}
                     draggable
                     onDragStart={(e) => handleTileDragStart(e, slotIdx)}
@@ -439,7 +605,14 @@ export default function MainDashboard({ onOpenApp }) {
                     onDragLeave={(e) => handleTileDragLeave(e, slotIdx)}
                     onDrop={(e) => handleTileDrop(e, slotIdx)}
                     onDragEnd={handleTileDragEnd}
+                    onTouchStart={(e) => handleTileTouchStart(e, slotIdx)}
+                    onTouchMove={(e) => handleTileTouchMove(e, slotIdx)}
+                    onTouchEnd={(e) => handleTileTouchEnd(e, slotIdx)}
                     onClick={() => {
+                      if (tileTouchRef.current.justDragged) {
+                        tileTouchRef.current.justDragged = false;
+                        return;
+                      }
                       if (tile.id === 'app-5' || tile.url?.includes('drive.google.com')) {
                         window.open('https://drive.google.com/drive/my-drive', '_blank', 'noopener,noreferrer');
                       } else if (tile.id === 'app-6' || tile.url?.includes('gmail.com')) {
@@ -460,6 +633,7 @@ export default function MainDashboard({ onOpenApp }) {
               return (
                 <div
                   key={`slot-empty-${slotIdx}`}
+                  data-slot-idx={slotIdx}
                   className={`tile-slot-empty ${isTileDragging ? 'drag-active' : 'idle-empty'} ${isDragOverThis ? 'drag-over' : ''}`}
                   onDragOver={(e) => handleTileDragOver(e, slotIdx)}
                   onDragLeave={(e) => handleTileDragLeave(e, slotIdx)}
@@ -486,6 +660,9 @@ export default function MainDashboard({ onOpenApp }) {
           onSectionDragLeave={handleSectionDragLeave}
           onSectionDrop={handleSectionDrop}
           onSectionDragEnd={handleSectionDragEnd}
+          onSectionTouchStart={handleSectionTouchStart}
+          onSectionTouchMove={handleSectionTouchMove}
+          onSectionTouchEnd={handleSectionTouchEnd}
           isSectionDragging={draggedSection === 'calendar'}
           isSectionDragOver={dragOverSection === 'calendar'}
           defaultWidth="calc(66% - 0.75rem)"
@@ -512,6 +689,9 @@ export default function MainDashboard({ onOpenApp }) {
           onSectionDragLeave={handleSectionDragLeave}
           onSectionDrop={handleSectionDrop}
           onSectionDragEnd={handleSectionDragEnd}
+          onSectionTouchStart={handleSectionTouchStart}
+          onSectionTouchMove={handleSectionTouchMove}
+          onSectionTouchEnd={handleSectionTouchEnd}
           isSectionDragging={draggedSection === 'reminders'}
           isSectionDragOver={dragOverSection === 'reminders'}
           defaultWidth="calc(34% - 0.75rem)"

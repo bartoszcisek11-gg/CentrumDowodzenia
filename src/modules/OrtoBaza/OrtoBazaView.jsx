@@ -35,8 +35,8 @@ export default function OrtoBazaView() {
   // Stany dla efektu hover na przyciskach
   const [isBackHovered, setIsBackHovered] = useState(false);
   const [isAddHovered, setIsAddHovered] = useState(false);
-  const [isAddDocHovered, seIsAddDocHovered] = useState(false);
- 
+  const [isAddDocHovered, setIsAddDocHovered] = useState(false);
+
   // Kolejność Kafelków Menu (Drag and Drop)
   const [tilesOrder, setTilesOrder] = useState(() => {
     return JSON.parse(localStorage.getItem('orto_baza_tiles_order')) || defaultTiles;
@@ -170,6 +170,74 @@ export default function OrtoBazaView() {
   }, [isDocFormOpen]);
 
   // Obsługa Drag and Drop Kafelków
+  const touchRef = useRef({
+    startX: 0,
+    startY: 0,
+    index: null,
+    isDragging: false,
+    justDragged: false,
+  });
+
+  const handleTouchStart = (e, index) => {
+    const touch = e.touches[0];
+    touchRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      index: index,
+      isDragging: false,
+      justDragged: false,
+    };
+  };
+
+  const handleTouchMove = (e, index) => {
+    const state = touchRef.current;
+    if (state.index === null) return;
+
+    const touch = e.touches[0];
+    const dx = touch.clientX - state.startX;
+    const dy = touch.clientY - state.startY;
+
+    if (!state.isDragging && Math.hypot(dx, dy) > 8) {
+      state.isDragging = true;
+      setIsDragging(true);
+      setDraggedTileIndex(index);
+    }
+
+    if (state.isDragging) {
+      if (e.cancelable) e.preventDefault();
+      const elem = document.elementFromPoint(touch.clientX, touch.clientY);
+      if (elem) {
+        const tileElem = elem.closest('[data-orto-tile-idx]');
+        if (tileElem) {
+          const targetIndex = parseInt(tileElem.getAttribute('data-orto-tile-idx'), 10);
+          if (!isNaN(targetIndex) && state.index !== targetIndex) {
+            const newTiles = [...tilesOrder];
+            const draggedTile = newTiles[state.index];
+            newTiles.splice(state.index, 1);
+            newTiles.splice(targetIndex, 0, draggedTile);
+            state.index = targetIndex;
+            setDraggedTileIndex(targetIndex);
+            setTilesOrder(newTiles);
+          }
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    const state = touchRef.current;
+    if (state.isDragging) {
+      state.justDragged = true;
+    }
+    setDraggedTileIndex(null);
+    setTimeout(() => {
+      setIsDragging(false);
+      state.justDragged = false;
+    }, 50);
+    state.index = null;
+    state.isDragging = false;
+  };
+
   const handleDragStart = (e, index) => {
     setDraggedTileIndex(index);
     setIsDragging(true);
@@ -460,11 +528,18 @@ export default function OrtoBazaView() {
           {tilesOrder.map((tile, index) => (
             <div
               key={tile.id}
+              data-orto-tile-idx={index}
               draggable
               onDragStart={(e) => handleDragStart(e, index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDragEnd={handleDragEnd}
-              onClick={() => handleTileClick(tile.id)}
+              onTouchStart={(e) => handleTouchStart(e, index)}
+              onTouchMove={(e) => handleTouchMove(e, index)}
+              onTouchEnd={handleTouchEnd}
+              onClick={() => {
+                if (touchRef.current.justDragged) return;
+                handleTileClick(tile.id);
+              }}
               style={{
                 backgroundColor: '#111622',
                 border: draggedTileIndex === index ? '2px dashed #00f2ff' : '1px solid #1c2b3d',
@@ -479,7 +554,8 @@ export default function OrtoBazaView() {
                 transition: 'transform 0.15s ease, border-color 0.2s ease',
                 boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
                 opacity: draggedTileIndex === index ? 0.5 : 1,
-                userSelect: 'none'
+                userSelect: 'none',
+                touchAction: 'none'
               }}
               onMouseEnter={(e) => {
                 if (draggedTileIndex === null) e.currentTarget.style.borderColor = '#00f2ff';
@@ -725,7 +801,7 @@ export default function OrtoBazaView() {
                     setDocFormTitle('');
                     setDocFormHtml('');
                     setIsDocFormOpen(true);
-                   }}
+                  }}
                   className="btn-orto-action"
                 >
                   + Nowy Dokument / Zaświadczenie
