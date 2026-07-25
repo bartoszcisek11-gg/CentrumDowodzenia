@@ -3,10 +3,20 @@ import ICloudCalendar from './ICloudCalendar';
 import Reminders from './Reminders';
 
 const GoogleDriveLogo = (
-  <svg width="40" height="40" viewBox="0 0 87.3 78" style={{ display: 'inline-block', verticalAlign: 'middle' }}>
-    <path fill="#FFC107" d="M28.6 0L0 49.5l14.3 24.8L42.9 24.8z"/>
-    <path fill="#00AC47" d="M14.3 74.3h57.2l14.3-24.8H28.6z"/>
-    <path fill="#0066DA" d="M28.6 0l14.3 24.8h42.9L71.5 0z"/>
+  <svg width="40" height="40" viewBox="-10 -10 120 107" style={{ display: 'inline-block', verticalAlign: 'middle' }}>
+    <path fill="#00AC47" d="M0 57.74 L33.33 0 L50 28.87 L16.67 86.6 Z" />
+    <path fill="#FFBA00" d="M33.33 0 L66.67 0 L100 57.74 L66.67 57.74 Z" />
+    <path fill="#2684FC" d="M16.67 86.6 L83.33 86.6 L100 57.74 L33.33 57.74 Z" />
+  </svg>
+);
+
+const GmailLogo = (
+  <svg width="40" height="40" viewBox="0 0 512 512" style={{ display: 'inline-block', verticalAlign: 'middle' }}>
+    <path d="M34.9 448h81.5V250.2L0 163v250.2C0 432.5 15.7 448 34.9 448" fill="#4285f4"/>
+    <path d="M395.6 448h81.5c19.3 0 34.9-15.7 34.9-34.9V163l-116.4 87.3" fill="#34a853"/>
+    <path d="M395.6 99v151.3L512 163v-46.5c0-43.2-49.3-67.8-83.8-41.9" fill="#fbbc04"/>
+    <path d="M116.4 250.2V99L256 203.7 395.6 99v151.3L256 355" fill="#ea4335"/>
+    <path d="M0 116.4V163l116.4 87.3V99L83.8 74.5C49.2 48.6 0 73.2 0 116.4" fill="#c5221f"/>
   </svg>
 );
 
@@ -15,7 +25,8 @@ const DEFAULT_TILES = [
   { id: 'app-2', title: 'Kalkulator Stażu Podyplomowego', icon: '🩺' },
   { id: 'app-3', title: 'Finanse', icon: '💳' },
   { id: 'app-4', title: 'Praca - COM Jarosław', icon: '🏥' },
-  { id: 'app-5', title: 'Google Drive', icon: GoogleDriveLogo }
+  { id: 'app-5', title: 'Google Drive', icon: GoogleDriveLogo, url: 'https://drive.google.com/drive/my-drive' },
+  { id: 'app-6', title: 'Gmail', icon: GmailLogo, url: 'https://gmail.com/' }
 ];
 
 function ResizableWidget({
@@ -428,7 +439,17 @@ export default function MainDashboard({ onOpenApp }) {
                     onDragLeave={(e) => handleTileDragLeave(e, slotIdx)}
                     onDrop={(e) => handleTileDrop(e, slotIdx)}
                     onDragEnd={handleTileDragEnd}
-                    onClick={() => onOpenApp(tile.id, tile.title)}
+                    onClick={() => {
+                      if (tile.id === 'app-5' || tile.url?.includes('drive.google.com')) {
+                        window.open('https://drive.google.com/drive/my-drive', '_blank', 'noopener,noreferrer');
+                      } else if (tile.id === 'app-6' || tile.url?.includes('gmail.com')) {
+                        window.open('https://gmail.com/', '_blank', 'noopener,noreferrer');
+                      } else if (tile.url) {
+                        window.open(tile.url, '_blank', 'noopener,noreferrer');
+                      } else {
+                        onOpenApp(tile.id, tile.title);
+                      }
+                    }}
                   >
                     <div className="tile-icon">{tile.icon}</div>
                     <div className="tile-title">{tile.title}</div>

@@ -9,7 +9,6 @@ import OrtoBazaView from './modules/OrtoBaza/OrtoBazaView';
 import StazView from './modules/StazCalculator/StazView';
 import FinancesView from './modules/Finances/FinancesView';
 import WorkView from './modules/WorkWorksheets/WorkView';
-import GoogleDriveView from './modules/GoogleDrive/GoogleDriveView';
 
 import { exportDatabase, importDatabase } from './utils/storage';
 
@@ -44,7 +43,19 @@ export default function App() {
     return <LoginModal onLogin={() => setIsAuthenticated(true)} />;
   }
 
-  const handleOpenApp = (id, title) => {
+  const handleOpenApp = (id, title, url) => {
+    if (url) {
+      window.open(url, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (id === 'app-5') {
+      window.open('https://drive.google.com/drive/my-drive', '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (id === 'app-6') {
+      window.open('https://gmail.com/', '_blank', 'noopener,noreferrer');
+      return;
+    }
     setCurrentApp(id);
     setCurrentAppTitle(title);
   };
@@ -71,15 +82,13 @@ export default function App() {
   const renderAppContent = () => {
     switch (currentApp) {
       case 'app-1':
-        return <OrtoBazaView />; /* POPRAWIONE: OrtoBaza -> OrtoBazaView */
+        return <OrtoBazaView />;
       case 'app-2':
         return <StazView />;
       case 'app-3':
         return <FinancesView />;
       case 'app-4':
         return <WorkView />;
-      case 'app-5':
-        return <GoogleDriveView />;
       default:
         return <MainDashboard onOpenApp={handleOpenApp} />;
     }
