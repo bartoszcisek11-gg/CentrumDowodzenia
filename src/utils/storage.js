@@ -92,10 +92,19 @@ export const exportDatabase = async (customPin) => {
 
   if (!targetPin) return;
 
+  // Pobranie kluczy i wartości z localStorage w sposób bezpieczny dla wszystkich przeglądarek (w tym Safari / iPadOS)
+  const storageObj = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key) {
+      storageObj[key] = localStorage.getItem(key);
+    }
+  }
+
   const backupData = {
     version: "1.0",
     timestamp: new Date().toISOString(),
-    storage: { ...localStorage }
+    storage: storageObj
   };
 
   try {
@@ -166,6 +175,7 @@ export const importDatabase = (file, onSuccess, providedPin) => {
 
       if (window.confirm('Czy na pewno chcesz nadpisać obecne dane danymi z pliku?')) {
         if (finalStorage) {
+          localStorage.clear();
           Object.keys(finalStorage).forEach(key => {
             localStorage.setItem(key, finalStorage[key]);
           });
