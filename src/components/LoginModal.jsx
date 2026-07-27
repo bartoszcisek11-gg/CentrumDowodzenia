@@ -41,7 +41,9 @@ export default function LoginModal({ onLogin }) {
   // Generowanie kresek dla obrotowego pierścienia SVG
   const totalBars = 60;
   const radius = 190;
-  const activeCount = Math.min(password.length * 5, totalBars);
+  const correctPass = storedPassword || '123';
+  const targetLength = Math.max(correctPass.length, 1);
+  const activeCount = Math.min(Math.round((password.length / targetLength) * totalBars), totalBars);
 
   const bars = Array.from({ length: totalBars }).map((_, i) => {
     const angle = (i * 360) / totalBars;
@@ -53,7 +55,7 @@ export default function LoginModal({ onLogin }) {
     const x2 = 220 + radius * Math.cos(rad);
     const y2 = 220 + radius * Math.sin(rad);
 
-    const isActive = i < activeCount || (!storedPassword && i < 20);
+    const isActive = i < activeCount;
 
     return (
       <line

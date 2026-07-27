@@ -489,11 +489,15 @@ main {
   border: none;
   cursor: pointer;
   font-weight: 700;
-  transition: all 0.2s ease;
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.35);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #app-2 button:hover {
-  box-shadow: 0 0 12px rgba(0, 242, 255, 0.5);
+  background: linear-gradient(90deg, #00f2ff 0%, #38ef7d 100%);
+  box-shadow: 0 0 25px rgba(0, 242, 255, 0.8), 0 0 12px rgba(56, 239, 125, 0.6);
+  transform: translateY(-2px);
+  color: #0b0e14;
 }
 
 #app-2 button.btn-danger {
@@ -713,13 +717,15 @@ main {
   font-weight: 700;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 4px 15px rgba(0, 242, 255, 0.25);
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.35);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-toggle-panel:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(0, 242, 255, 0.4);
+  background: linear-gradient(90deg, #00f2ff 0%, #38ef7d 100%);
+  box-shadow: 0 0 25px rgba(0, 242, 255, 0.8), 0 0 12px rgba(56, 239, 125, 0.6);
+  transform: translateY(-2px);
+  color: #0b0e14;
 }
 
 .form-drawer {
@@ -776,11 +782,15 @@ main {
   font-weight: 700;
   border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.35);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .btn-save:hover { 
-  box-shadow: 0 0 12px rgba(0, 242, 255, 0.5);
+  background: linear-gradient(90deg, #00f2ff 0%, #38ef7d 100%);
+  box-shadow: 0 0 25px rgba(0, 242, 255, 0.8), 0 0 12px rgba(56, 239, 125, 0.6);
+  transform: translateY(-2px);
+  color: #0b0e14;
 }
 
 .main-tabs {
@@ -1501,9 +1511,14 @@ main {
 .praca-btn-primary { 
   background: linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%); 
   color: #0b0e14; 
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.35);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .praca-btn-primary:hover { 
-  box-shadow: 0 0 12px rgba(0, 242, 255, 0.5); 
+  background: linear-gradient(90deg, #00f2ff 0%, #38ef7d 100%);
+  box-shadow: 0 0 25px rgba(0, 242, 255, 0.8), 0 0 12px rgba(56, 239, 125, 0.6);
+  transform: translateY(-2px);
+  color: #0b0e14;
 }
 .praca-btn-danger { 
   background-color: var(--danger); 

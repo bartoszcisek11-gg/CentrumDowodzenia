@@ -71,6 +71,20 @@ export default function ICloudCalendar() {
     }
   }, [icalUrl]);
 
+  useEffect(() => {
+    const handleKeyDownEsc = (e) => {
+      if ((e.key === 'Escape' || e.key === 'Esc') && isAddOpen) {
+        e.stopPropagation();
+        setIsAddOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDownEsc, true);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDownEsc, true);
+    };
+  }, [isAddOpen]);
+
   const saveUrl = () => {
     localStorage.setItem('icloud_ical_url', tempUrl);
     setIcalUrl(tempUrl);

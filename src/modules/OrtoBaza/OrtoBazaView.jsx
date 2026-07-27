@@ -22,6 +22,11 @@ const defaultTiles = [
     icon: '📄'
   },
   {
+    id: 'PROCEDURES',
+    title: 'Zabiegi',
+    icon: '🔪'
+  },
+  {
     id: 'NOTES',
     title: 'Notatki & Wpisy',
     icon: '📝'
@@ -39,7 +44,14 @@ export default function OrtoBazaView() {
 
   // Kolejność Kafelków Menu (Drag and Drop)
   const [tilesOrder, setTilesOrder] = useState(() => {
-    return JSON.parse(localStorage.getItem('orto_baza_tiles_order')) || defaultTiles;
+    const saved = JSON.parse(localStorage.getItem('orto_baza_tiles_order'));
+    if (saved && Array.isArray(saved)) {
+      const savedIds = new Set(saved.map(t => t.id));
+      const missing = defaultTiles.filter(dt => !savedIds.has(dt.id));
+      const combined = [...saved, ...missing];
+      return combined.map(t => t.id === 'PROCEDURES' ? { ...t, icon: '🔪' } : t);
+    }
+    return defaultTiles;
   });
 
   const [draggedTileIndex, setDraggedTileIndex] = useState(null);
@@ -57,6 +69,11 @@ export default function OrtoBazaView() {
   // Stan Własnych Dokumentów / Zaświadczeń
   const [docs, setDocs] = useState(() => {
     return JSON.parse(localStorage.getItem('orto_baza_custom_docs')) || [];
+  });
+
+  // Stan Zabiegów
+  const [procedures, setProcedures] = useState(() => {
+    return JSON.parse(localStorage.getItem('orto_baza_procedures')) || [];
   });
 
   const [search, setSearch] = useState('');
@@ -82,12 +99,36 @@ export default function OrtoBazaView() {
   const [docFormHtml, setDocFormHtml] = useState('');
   const [isDocFormOpen, setIsDocFormOpen] = useState(false);
 
+  // Stan Modala Zabiegów
+  const [isProceduresModalOpen, setIsProceduresModalOpen] = useState(false);
+  const [procedureSearch, setProcedureSearch] = useState('');
+  const [editingProcedureId, setEditingProcedureId] = useState(null);
+  const [procTitle, setProcTitle] = useState('');
+  const [procRozpoznanie, setProcRozpoznanie] = useState('');
+  const [procLeczenie, setProcLeczenie] = useState('');
+  const [procZalecenia, setProcZalecenia] = useState('');
+  const [isProcedureFormOpen, setIsProcedureFormOpen] = useState(false);
+
   const editorRef = useRef(null);
 
   // Obsługa Klawisza ESCAPE krok po kroku we wszystkich częściach OrtoBazy
   useEffect(() => {
     const handleKeyDownEsc = (e) => {
       if (e.key === 'Escape' || e.key === 'Esc') {
+
+        // 0a. Jeśli otwarty jest edytor zabiegu -> zamknij edytor zabiegu
+        if (isProcedureFormOpen) {
+          e.stopPropagation();
+          setIsProcedureFormOpen(false);
+          return;
+        }
+
+        // 0b. Jeśli otwarte jest okno Zabiegi -> zamknij okno Zabiegi i wróć do menu
+        if (isProceduresModalOpen) {
+          e.stopPropagation();
+          setIsProceduresModalOpen(false);
+          return;
+        }
 
         // 1. Jeśli otwarty jest edytor wewn. dokumentu -> zamknij edytor
         if (isDocFormOpen) {
@@ -138,6 +179,8 @@ export default function OrtoBazaView() {
       window.removeEventListener('keydown', handleKeyDownEsc, true);
     };
   }, [
+    isProcedureFormOpen,
+    isProceduresModalOpen,
     isDocFormOpen, 
     isModalOpen, 
     isDocsModalOpen, 
@@ -157,6 +200,10 @@ export default function OrtoBazaView() {
   useEffect(() => {
     localStorage.setItem('orto_baza_custom_docs', JSON.stringify(docs));
   }, [docs]);
+
+  useEffect(() => {
+    localStorage.setItem('orto_baza_procedures', JSON.stringify(procedures));
+  }, [procedures]);
 
   useEffect(() => {
     localStorage.setItem('orto_baza_tiles_order', JSON.stringify(tilesOrder));
@@ -269,8 +316,63 @@ export default function OrtoBazaView() {
       setIsAoModalOpen(true);
     } else if (tileId === 'DOCS') {
       setIsDocsModalOpen(true);
+    } else if (tileId === 'PROCEDURES') {
+      setIsProceduresModalOpen(true);
     } else if (tileId === 'NOTES') {
       setCurrentView('NOTATKI');
+    }
+  };
+
+  const openNewProcedureForm = () => {
+    setEditingProcedureId(null);
+    setProcTitle('');
+    setProcRozpoznanie('');
+    setProcLeczenie('');
+    setProcZalecenia('');
+    setIsProcedureFormOpen(true);
+  };
+
+  const openEditProcedureForm = (proc) => {
+    setEditingProcedureId(proc.id);
+    setProcTitle(proc.title || '');
+    setProcRozpoznanie(proc.rozpoznanie || '');
+    setProcLeczenie(proc.leczenie || '');
+    setProcZalecenia(proc.zalecenia || '');
+    setIsProcedureFormOpen(true);
+  };
+
+  const handleSaveProcedure = (e) => {
+    e.preventDefault();
+    if (!procTitle.trim()) {
+      alert('Wprowadź tytuł / nazwę zabiegu!');
+      return;
+    }
+
+    if (editingProcedureId) {
+      setProcedures(prev => prev.map(p => p.id === editingProcedureId ? {
+        ...p,
+        title: procTitle.trim(),
+        rozpoznanie: procRozpoznanie,
+        leczenie: procLeczenie,
+        zalecenia: procZalecenia
+      } : p));
+    } else {
+      const newProc = {
+        id: Date.now(),
+        title: procTitle.trim(),
+        rozpoznanie: procRozpoznanie,
+        leczenie: procLeczenie,
+        zalecenia: procZalecenia
+      };
+      setProcedures(prev => [newProc, ...prev]);
+    }
+
+    setIsProcedureFormOpen(false);
+  };
+
+  const handleDeleteProcedure = (id) => {
+    if (window.confirm('Czy na pewno chcesz usunąć ten zabieg?')) {
+      setProcedures(prev => prev.filter(p => p.id !== id));
     }
   };
 
@@ -480,6 +582,16 @@ export default function OrtoBazaView() {
     d.title.toLowerCase().includes(docSearch.toLowerCase()) || 
     d.content.toLowerCase().includes(docSearch.toLowerCase())
   );
+
+  const filteredProcedures = procedures.filter(p => {
+    const q = procedureSearch.toLowerCase();
+    return (
+      (p.title || '').toLowerCase().includes(q) ||
+      (p.rozpoznanie || '').toLowerCase().includes(q) ||
+      (p.leczenie || '').toLowerCase().includes(q) ||
+      (p.zalecenia || '').toLowerCase().includes(q)
+    );
+  });
 
   const selectedArticle = articles.find(a => a.id === selectedArticleId);
 
@@ -914,7 +1026,7 @@ export default function OrtoBazaView() {
                     </button>
                     <button
                       type="submit"
-                      style={{ padding: '8px 20px', backgroundColor: '#00f2ff', color: '#0b0e14', border: 'none', borderRadius: '6px', fontWeight: '700', cursor: 'pointer' }}
+                      className="btn-orto-action"
                     >
                       Zapisz Dokument
                     </button>
@@ -950,6 +1062,240 @@ export default function OrtoBazaView() {
                       >
                         🖨️ Drukuj / Zapisz jako PDF
                       </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ZABIEGI */}
+      {isProceduresModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(11, 14, 20, 0.9)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px',
+          zIndex: 10000
+        }}>
+          <div style={{
+            backgroundColor: '#111622',
+            border: '1px solid #00f2ff',
+            borderRadius: '16px',
+            maxWidth: '1200px',
+            width: '100%',
+            height: '88vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 20px 50px rgba(0, 242, 255, 0.2)',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: '1px solid #1c2b3d', backgroundColor: '#0b0e14' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.2rem' }}>🔪</span>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#fff', fontWeight: '700' }}>Zabiegi operacyjne i procedury</h3>
+              </div>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <button
+                  onClick={openNewProcedureForm}
+                  className="btn-orto-action"
+                >
+                  + Nowy Zabieg
+                </button>
+                <button
+                  onClick={() => setIsProceduresModalOpen(false)}
+                  style={{ background: 'none', border: 'none', color: '#52677d', fontSize: '1.8rem', cursor: 'pointer', lineHeight: 1 }}
+                >
+                  &times;
+                </button>
+              </div>
+            </div>
+
+            <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+              <input
+                type="text"
+                placeholder="Szukaj zabiegu po nazwie, rozpoznaniu, leczeniu lub zaleceniach..."
+                value={procedureSearch}
+                onChange={(e) => setProcedureSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid #1c2b3d',
+                  backgroundColor: '#0b0e14',
+                  color: '#fff',
+                  outline: 'none',
+                  marginBottom: '20px',
+                  boxSizing: 'border-box'
+                }}
+              />
+
+              {isProcedureFormOpen && (
+                <form onSubmit={handleSaveProcedure} style={{ backgroundColor: '#0b0e14', padding: '20px', borderRadius: '12px', border: '1px solid #00f2ff', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                  <h4 style={{ margin: 0, color: '#00f2ff' }}>{editingProcedureId ? 'Edytuj zabieg' : 'Dodaj nowy zabieg'}</h4>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: '#52677d', marginBottom: '6px' }}>
+                      Nazwa zabiegu / Pacjent *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="np. Endoprotezoplastyka stawu biodrowego / Jan Kowalski"
+                      value={procTitle}
+                      onChange={(e) => setProcTitle(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #1c2b3d',
+                        backgroundColor: '#111622',
+                        color: '#fff',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        fontSize: '0.95rem'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: '#52677d', marginBottom: '6px' }}>
+                      📋 Rozpoznanie
+                    </label>
+                    <textarea
+                      rows="3"
+                      placeholder="Wpisz rozpoznanie kliniczne i podanie klasyfikacji..."
+                      value={procRozpoznanie}
+                      onChange={(e) => setProcRozpoznanie(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #1c2b3d',
+                        backgroundColor: '#111622',
+                        color: '#fff',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        fontSize: '0.9rem',
+                        resize: 'vertical',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: '#52677d', marginBottom: '6px' }}>
+                      💉 Zastosowane leczenie
+                    </label>
+                    <textarea
+                      rows="3"
+                      placeholder="Opis procedury operacyjnej, użyte implanty, dostępy..."
+                      value={procLeczenie}
+                      onChange={(e) => setProcLeczenie(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #1c2b3d',
+                        backgroundColor: '#111622',
+                        color: '#fff',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        fontSize: '0.9rem',
+                        resize: 'vertical',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', textTransform: 'uppercase', color: '#52677d', marginBottom: '6px' }}>
+                      📝 Zalecenia lekarskie
+                    </label>
+                    <textarea
+                      rows="3"
+                      placeholder="Zalecenia pooperacyjne, leki, fizjoterapia, obciążanie..."
+                      value={procZalecenia}
+                      onChange={(e) => setProcZalecenia(e.target.value)}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid #1c2b3d',
+                        backgroundColor: '#111622',
+                        color: '#fff',
+                        outline: 'none',
+                        boxSizing: 'border-box',
+                        fontSize: '0.9rem',
+                        resize: 'vertical',
+                        fontFamily: 'inherit'
+                      }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsProcedureFormOpen(false)}
+                      style={{ padding: '8px 16px', backgroundColor: 'transparent', border: '1px solid #1c2b3d', color: '#94a3b8', borderRadius: '6px', cursor: 'pointer' }}
+                    >
+                      Anuluj
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn-orto-action"
+                    >
+                      Zapisz Zabieg
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {filteredProcedures.length === 0 ? (
+                <div style={{ textAlign: 'center', color: '#52677d', padding: '50px 20px', border: '1px dashed #1c2b3d', borderRadius: '12px' }}>
+                  Brak wpisów o zabiegach. Kliknij <b>"+ Nowy Zabieg"</b> powyżej, aby dodać swój pierwszy wpis.
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '18px' }}>
+                  {filteredProcedures.map(proc => (
+                    <div key={proc.id} style={{ backgroundColor: '#0b0e14', border: '1px solid #1c2b3d', borderRadius: '12px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #1c2b3d', paddingBottom: '10px' }}>
+                        <div>
+                          <h4 style={{ margin: 0, color: '#fff', fontSize: '1.1rem', fontWeight: '700' }}>{proc.title}</h4>
+                        </div>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button onClick={() => openEditProcedureForm(proc)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }} title="Edytuj">✏️</button>
+                          <button onClick={() => handleDeleteProcedure(proc.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: '#ff4d4f' }} title="Usuń">&times;</button>
+                        </div>
+                      </div>
+
+                      {proc.rozpoznanie && (
+                        <div style={{ backgroundColor: '#111622', padding: '10px 12px', borderRadius: '8px', borderLeft: '3px solid #3b82f6' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#3b82f6', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>📋 Rozpoznanie:</div>
+                          <div style={{ fontSize: '0.88rem', color: '#e2e8f0', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{proc.rozpoznanie}</div>
+                        </div>
+                      )}
+
+                      {proc.leczenie && (
+                        <div style={{ backgroundColor: '#111622', padding: '10px 12px', borderRadius: '8px', borderLeft: '3px solid #10b981' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>💉 Zastosowane leczenie:</div>
+                          <div style={{ fontSize: '0.88rem', color: '#e2e8f0', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{proc.leczenie}</div>
+                        </div>
+                      )}
+
+                      {proc.zalecenia && (
+                        <div style={{ backgroundColor: '#111622', padding: '10px 12px', borderRadius: '8px', borderLeft: '3px solid #f59e0b' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#f59e0b', fontWeight: '700', textTransform: 'uppercase', marginBottom: '4px' }}>📝 Zalecenia lekarskie:</div>
+                          <div style={{ fontSize: '0.88rem', color: '#e2e8f0', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{proc.zalecenia}</div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1152,7 +1498,7 @@ export default function OrtoBazaView() {
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: '10px 24px', background: 'linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%)', border: 'none', color: '#0b0e14', borderRadius: '8px', cursor: 'pointer', fontWeight: '700' }}
+                  className="btn-orto-action"
                 >
                   Zapisz
                 </button>
