@@ -1943,7 +1943,7 @@ main {
 
 /* Przyciski OrtoBaza (+ Nowy wpis / + Nowy dokument) z potężnym podświetleniem neonowym */
 .btn-orto-action {
-  padding: 10px 20px !important;
+  padding: 8px 18px;
   background: linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%) !important;
   color: #0b0e14 !important;
   border: none !important;
@@ -1955,7 +1955,7 @@ main {
   display: inline-flex !important;
   align-items: center !important;
   gap: 6px !important;
-  font-size: 0.9rem !important;
+  font-size: 0.85rem;
   user-select: none !important;
 }
 
