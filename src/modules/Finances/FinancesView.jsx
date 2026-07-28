@@ -1,15 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, LineChart, InvestmentChart } from './FinanceCharts';
 
-export default function FinancesView() {
+export default function FinancesView({ onRegisterBack }) {
   const [baza, setBaza] = useState(() => {
-    const saved = JSON.parse(localStorage.getItem('finanse_baza_v4'));
-    return saved || { transakcje: [], stany_konta: [], wydatki_domowe: [], inwestycje: [] };
+    try {
+      const saved = JSON.parse(localStorage.getItem('finanse_baza_v4'));
+      if (saved) return saved;
+    } catch (e) {
+      console.error('Błąd odczytu finanse_baza_v4:', e);
+    }
+    return { transakcje: [], stany_konta: [], wydatki_domowe: [], inwestycje: [] };
   });
 
   const [activeTab, setActiveTab] = useState('przychody');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [aktywnyMiesiac, setAktywnyMiesiac] = useState(null);
+
+  useEffect(() => {
+    if (!onRegisterBack) return;
+    const handleInternalBack = () => {
+      if (isFormOpen) {
+        setIsFormOpen(false);
+        return true;
+      }
+      return false;
+    };
+    onRegisterBack(handleInternalBack);
+    return () => onRegisterBack(null);
+  }, [onRegisterBack, isFormOpen]);
 
   const [inputData, setInputData] = useState(new Date().toISOString().split('T')[0]);
   const [inputOpis, setInputOpis] = useState('');

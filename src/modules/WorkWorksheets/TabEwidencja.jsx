@@ -100,20 +100,20 @@ export default function TabEwidencja({
 
       <table className="ewidencja-table">
         <colgroup>
-          <col style={{ width: '2.2%' }} />
+          <col style={{ width: '2.5%' }} />
           <col style={{ width: '3.5%' }} />
-          <col style={{ width: '3.5%' }} />
-          <col style={{ width: '4.2%' }} />
-          <col style={{ width: '4.2%' }} />
-          <col style={{ width: '5.0%' }} />
+          <col style={{ width: '4.5%' }} />
+          <col style={{ width: '4.0%' }} />
+          <col style={{ width: '4.0%' }} />
+          <col style={{ width: '5.5%' }} />
           <col style={{ width: '6.0%' }} />
-          <col style={{ width: '3.5%' }} />
+          <col style={{ width: '4.0%' }} />
           <col style={{ width: '5.0%' }} />
           <col style={{ width: '4.5%' }} />
-          <col style={{ width: '2.7%' }} span="10" />
-          <col style={{ width: '4.5%' }} />
-          <col style={{ width: '4.5%' }} />
-          <col style={{ width: '4.5%' }} />
+          <col style={{ width: '3.0%' }} span="10" />
+          <col style={{ width: '8.5%' }} />
+          <col style={{ width: '8.5%' }} />
+          <col style={{ width: '9.5%' }} />
         </colgroup>
         <thead>
           <tr>

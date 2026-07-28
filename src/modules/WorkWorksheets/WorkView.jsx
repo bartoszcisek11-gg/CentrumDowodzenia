@@ -10,7 +10,13 @@ export default function WorkView() {
   const d = new Date();
 
   const [meta, setMeta] = useState(() => {
-    return JSON.parse(localStorage.getItem('praca_meta')) || {
+    try {
+      const saved = JSON.parse(localStorage.getItem('praca_meta'));
+      if (saved) return saved;
+    } catch (e) {
+      console.error('Błąd odczytu praca_meta:', e);
+    }
+    return {
       imie: '',
       oddzial: '',
       stanowisko: '',
@@ -178,7 +184,7 @@ export default function WorkView() {
       document.head.appendChild(styleSheet);
     }
     if (activeTab === 'ewidencja') {
-      styleSheet.innerHTML = '@media print { @page { size: A4 landscape; margin: 0; } }';
+      styleSheet.innerHTML = '@media print { @page { size: A4 landscape; margin: 3mm; } }';
     } else {
       styleSheet.innerHTML = '@media print { @page { size: A4 portrait; margin: 0; } }';
     }

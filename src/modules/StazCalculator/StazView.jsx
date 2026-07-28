@@ -3,7 +3,13 @@ import { dodajDniRobocze, policzDniRoboczeMiedzy, formatujDate } from '../../uti
 
 export default function StazView({ onOpenModal }) {
   const [daneStaz, setDaneStaz] = useState(() => {
-    return JSON.parse(localStorage.getItem('stazData')) || {
+    try {
+      const saved = JSON.parse(localStorage.getItem('stazData'));
+      if (saved) return saved;
+    } catch (e) {
+      console.error('Błąd odczytu stazData:', e);
+    }
+    return {
       startDate: new Date().toISOString().split('T')[0],
       staze: [],
       notatki: ''

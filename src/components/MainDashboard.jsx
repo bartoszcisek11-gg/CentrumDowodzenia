@@ -209,12 +209,16 @@ function ResizableWidget({
 export default function MainDashboard({ onOpenApp }) {
   // Przechowywanie kolejności głównych sekcji (Kafelki, Kalendarz, Przypomnienia)
   const [sectionsOrder, setSectionsOrder] = useState(() => {
-    const saved = JSON.parse(localStorage.getItem('dashboard_sections_order'));
-    if (saved && Array.isArray(saved) && saved.length > 0) {
-      const allowed = ['tiles', 'calendar', 'reminders'];
-      const filtered = saved.filter(s => allowed.includes(s));
-      allowed.forEach(s => { if (!filtered.includes(s)) filtered.push(s); });
-      return filtered;
+    try {
+      const saved = JSON.parse(localStorage.getItem('dashboard_sections_order'));
+      if (saved && Array.isArray(saved) && saved.length > 0) {
+        const allowed = ['tiles', 'calendar', 'reminders'];
+        const filtered = saved.filter(s => allowed.includes(s));
+        allowed.forEach(s => { if (!filtered.includes(s)) filtered.push(s); });
+        return filtered;
+      }
+    } catch (e) {
+      console.error('Błąd odczytu dashboard_sections_order:', e);
     }
     return ['tiles', 'calendar', 'reminders'];
   });
@@ -350,48 +354,52 @@ export default function MainDashboard({ onOpenApp }) {
 
   // STAN I OBSŁUGA KAFELKÓW (TILES GRID)
   const [slotMap, setSlotMap] = useState(() => {
-    const savedSlots = JSON.parse(localStorage.getItem('dashboard_slots_map'));
     const tileMap = {};
     DEFAULT_TILES.forEach(t => { tileMap[t.id] = t; });
 
-    if (savedSlots && typeof savedSlots === 'object' && !Array.isArray(savedSlots)) {
-      const map = {};
-      const presentTileIds = new Set();
-      Object.keys(savedSlots).forEach(slotIdxStr => {
-        const slotIdx = parseInt(slotIdxStr, 10);
-        const tileId = savedSlots[slotIdxStr];
-        if (tileMap[tileId]) {
-          map[slotIdx] = tileMap[tileId];
-          presentTileIds.add(tileId);
-        }
-      });
-      DEFAULT_TILES.forEach(t => {
-        if (!presentTileIds.has(t.id)) {
-          let freeIdx = 0;
-          while (map[freeIdx]) freeIdx++;
-          map[freeIdx] = t;
-        }
-      });
-      return map;
-    }
+    try {
+      const savedSlots = JSON.parse(localStorage.getItem('dashboard_slots_map'));
+      if (savedSlots && typeof savedSlots === 'object' && !Array.isArray(savedSlots)) {
+        const map = {};
+        const presentTileIds = new Set();
+        Object.keys(savedSlots).forEach(slotIdxStr => {
+          const slotIdx = parseInt(slotIdxStr, 10);
+          const tileId = savedSlots[slotIdxStr];
+          if (tileMap[tileId]) {
+            map[slotIdx] = tileMap[tileId];
+            presentTileIds.add(tileId);
+          }
+        });
+        DEFAULT_TILES.forEach(t => {
+          if (!presentTileIds.has(t.id)) {
+            let freeIdx = 0;
+            while (map[freeIdx]) freeIdx++;
+            map[freeIdx] = t;
+          }
+        });
+        return map;
+      }
 
-    const savedOrder = JSON.parse(localStorage.getItem('dashboard_tiles_order'));
-    if (savedOrder && Array.isArray(savedOrder) && savedOrder.length > 0) {
-      const map = {};
-      let idx = 0;
-      savedOrder.forEach(id => {
-        if (tileMap[id]) {
-          map[idx] = tileMap[id];
-          idx++;
-        }
-      });
-      DEFAULT_TILES.forEach(t => {
-        if (!Object.values(map).find(m => m.id === t.id)) {
-          map[idx] = t;
-          idx++;
-        }
-      });
-      return map;
+      const savedOrder = JSON.parse(localStorage.getItem('dashboard_tiles_order'));
+      if (savedOrder && Array.isArray(savedOrder) && savedOrder.length > 0) {
+        const map = {};
+        let idx = 0;
+        savedOrder.forEach(id => {
+          if (tileMap[id]) {
+            map[idx] = tileMap[id];
+            idx++;
+          }
+        });
+        DEFAULT_TILES.forEach(t => {
+          if (!Object.values(map).find(m => m.id === t.id)) {
+            map[idx] = t;
+            idx++;
+          }
+        });
+        return map;
+      }
+    } catch (e) {
+      console.error('Błąd odczytu kafelków dashboardu:', e);
     }
 
     const map = {};

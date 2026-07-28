@@ -1,5 +1,5 @@
 import './App.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import LoginModal from './components/LoginModal';
 import MainDashboard from './components/MainDashboard';
 import ClearDataButton from './components/ClearDataButton';
@@ -23,12 +23,36 @@ export default function App() {
   // Stan podświetlenia dla przycisku Wyloguj
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
 
+  // Rejestracja dedykowanej obsługi powrotu z aktywnego modułu
+  const backHandlerRef = useRef(null);
+
+  const registerBackHandler = useCallback((handler) => {
+    backHandlerRef.current = handler;
+  }, []);
+
+  useEffect(() => {
+    backHandlerRef.current = null;
+  }, [currentApp]);
+
+  const handleGoHome = () => {
+    setCurrentApp(null);
+    setCurrentAppTitle('');
+  };
+
+  const handleGoBack = () => {
+    if (backHandlerRef.current) {
+      const handled = backHandlerRef.current();
+      if (handled) return;
+    }
+    handleGoHome();
+  };
+
   // Globalna obsługa klawisza Escape
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' || e.key === 'Esc') {
         if (currentApp !== null) {
-          handleGoHome();
+          handleGoBack();
         }
       }
     };
@@ -60,11 +84,6 @@ export default function App() {
     setCurrentAppTitle(title);
   };
 
-  const handleGoHome = () => {
-    setCurrentApp(null);
-    setCurrentAppTitle('');
-  };
-
   const handleLogout = () => {
     sessionStorage.removeItem('app_authenticated');
     sessionStorage.removeItem('app_pin');
@@ -83,13 +102,13 @@ export default function App() {
   const renderAppContent = () => {
     switch (currentApp) {
       case 'app-1':
-        return <OrtoBazaView />;
+        return <OrtoBazaView onRegisterBack={registerBackHandler} />;
       case 'app-2':
-        return <StazView />;
+        return <StazView onRegisterBack={registerBackHandler} />;
       case 'app-3':
-        return <FinancesView />;
+        return <FinancesView onRegisterBack={registerBackHandler} />;
       case 'app-4':
-        return <WorkView />;
+        return <WorkView onRegisterBack={registerBackHandler} />;
       default:
         return <MainDashboard onOpenApp={handleOpenApp} />;
     }
@@ -101,7 +120,7 @@ export default function App() {
         {/* LEWA STRONA NAGŁÓWKA (Przycisk Powrót) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', zIndex: 2, minHeight: '38px' }}>
           {currentApp && (
-            <button onClick={handleGoHome} className="btn-save">
+            <button onClick={handleGoBack} className="btn-save">
               ⬅️ Powrót
             </button>
           )}

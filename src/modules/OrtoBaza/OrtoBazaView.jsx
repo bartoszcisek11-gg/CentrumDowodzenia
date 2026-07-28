@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 const initialArticles = [
   {
@@ -33,7 +33,7 @@ const defaultTiles = [
   }
 ];
 
-export default function OrtoBazaView() {
+export default function OrtoBazaView({ onRegisterBack }) {
   // Kontrola widoku (MENU vs NOTATKI)
   const [currentView, setCurrentView] = useState('MENU');
 
@@ -44,12 +44,16 @@ export default function OrtoBazaView() {
 
   // Kolejność Kafelków Menu (Drag and Drop)
   const [tilesOrder, setTilesOrder] = useState(() => {
-    const saved = JSON.parse(localStorage.getItem('orto_baza_tiles_order'));
-    if (saved && Array.isArray(saved)) {
-      const savedIds = new Set(saved.map(t => t.id));
-      const missing = defaultTiles.filter(dt => !savedIds.has(dt.id));
-      const combined = [...saved, ...missing];
-      return combined.map(t => t.id === 'PROCEDURES' ? { ...t, icon: '🔪' } : t);
+    try {
+      const saved = JSON.parse(localStorage.getItem('orto_baza_tiles_order'));
+      if (saved && Array.isArray(saved)) {
+        const savedIds = new Set(saved.map(t => t.id));
+        const missing = defaultTiles.filter(dt => !savedIds.has(dt.id));
+        const combined = [...saved, ...missing];
+        return combined.map(t => t.id === 'PROCEDURES' ? { ...t, icon: '🔪' } : t);
+      }
+    } catch (e) {
+      console.error('Błąd odczytu orto_baza_tiles_order:', e);
     }
     return defaultTiles;
   });
@@ -58,22 +62,44 @@ export default function OrtoBazaView() {
   const [isDragging, setIsDragging] = useState(false);
 
   const [articles, setArticles] = useState(() => {
-    return JSON.parse(localStorage.getItem('ortho_articles_pro')) || initialArticles;
+    try {
+      const saved = JSON.parse(localStorage.getItem('ortho_articles_pro'));
+      if (saved && Array.isArray(saved)) return saved;
+    } catch (e) {
+      console.error('Błąd odczytu ortho_articles_pro:', e);
+    }
+    return initialArticles;
   });
 
   // Stan Notatnika OrtoBazy (Współdzielony między AO a kafelkiem Notatki)
   const [notes, setNotes] = useState(() => {
-    return localStorage.getItem('orto_baza_notes') || '';
+    try {
+      return localStorage.getItem('orto_baza_notes') || '';
+    } catch (e) {
+      return '';
+    }
   });
 
   // Stan Własnych Dokumentów / Zaświadczeń
   const [docs, setDocs] = useState(() => {
-    return JSON.parse(localStorage.getItem('orto_baza_custom_docs')) || [];
+    try {
+      const saved = JSON.parse(localStorage.getItem('orto_baza_custom_docs'));
+      if (saved && Array.isArray(saved)) return saved;
+    } catch (e) {
+      console.error('Błąd odczytu orto_baza_custom_docs:', e);
+    }
+    return [];
   });
 
   // Stan Zabiegów
   const [procedures, setProcedures] = useState(() => {
-    return JSON.parse(localStorage.getItem('orto_baza_procedures')) || [];
+    try {
+      const saved = JSON.parse(localStorage.getItem('orto_baza_procedures'));
+      if (saved && Array.isArray(saved)) return saved;
+    } catch (e) {
+      console.error('Błąd odczytu orto_baza_procedures:', e);
+    }
+    return [];
   });
 
   const [search, setSearch] = useState('');
@@ -111,65 +137,88 @@ export default function OrtoBazaView() {
 
   const editorRef = useRef(null);
 
+  // Dedykowana logika krok po kroku powrotu w OrtoBazie
+  const handleInternalBack = useCallback(() => {
+    // 0a. Jeśli otwarty jest edytor zabiegu -> zamknij edytor zabiegu
+    if (isProcedureFormOpen) {
+      setIsProcedureFormOpen(false);
+      return true;
+    }
+
+    // 0b. Jeśli otwarte jest okno Zabiegi -> zamknij okno Zabiegi i wróć do menu
+    if (isProceduresModalOpen) {
+      setIsProceduresModalOpen(false);
+      return true;
+    }
+
+    // 1. Jeśli otwarty jest edytor wewn. dokumentu -> zamknij edytor
+    if (isDocFormOpen) {
+      setIsDocFormOpen(false);
+      return true;
+    }
+
+    // 2. Jeśli otwarty jest modal edytora wpisu/notatki -> zamknij go
+    if (isModalOpen) {
+      setIsModalOpen(false);
+      return true;
+    }
+
+    // 3. Jeśli otwarte jest okno Dokumenty -> zamknij je i wróć do menu
+    if (isDocsModalOpen) {
+      setIsDocsModalOpen(false);
+      return true;
+    }
+
+    // 4. Jeśli otwarte jest okno AO Reference -> zamknij je i wróć do menu
+    if (isAoModalOpen) {
+      setIsAoModalOpen(false);
+      return true;
+    }
+
+    // 5. Jeśli otwarty jest szczegółowy widok posta/artykułu -> cofnij do listy notatek
+    if (selectedArticleId !== null) {
+      setSelectedArticleId(null);
+      return true;
+    }
+
+    // 6. Jeśli jesteśmy w widoku Notatki & Wpisy -> cofnij do głównego menu OrtoBazy
+    if (currentView === 'NOTATKI') {
+      setCurrentView('MENU');
+      return true;
+    }
+
+    // 7. Jesteśmy w menu głównym OrtoBazy -> zrób powrót do MainDashboard
+    return false;
+  }, [
+    isProcedureFormOpen,
+    isProceduresModalOpen,
+    isDocFormOpen,
+    isModalOpen,
+    isDocsModalOpen,
+    isAoModalOpen,
+    selectedArticleId,
+    currentView
+  ]);
+
+  // Rejestracja funkcji w rodzicu (App.jsx)
+  useEffect(() => {
+    if (onRegisterBack) {
+      onRegisterBack(handleInternalBack);
+    }
+    return () => {
+      if (onRegisterBack) {
+        onRegisterBack(null);
+      }
+    };
+  }, [onRegisterBack, handleInternalBack]);
+
   // Obsługa Klawisza ESCAPE krok po kroku we wszystkich częściach OrtoBazy
   useEffect(() => {
     const handleKeyDownEsc = (e) => {
       if (e.key === 'Escape' || e.key === 'Esc') {
-
-        // 0a. Jeśli otwarty jest edytor zabiegu -> zamknij edytor zabiegu
-        if (isProcedureFormOpen) {
+        const handled = handleInternalBack();
+        if (handled) {
           e.stopPropagation();
-          setIsProcedureFormOpen(false);
-          return;
-        }
-
-        // 0b. Jeśli otwarte jest okno Zabiegi -> zamknij okno Zabiegi i wróć do menu
-        if (isProceduresModalOpen) {
-          e.stopPropagation();
-          setIsProceduresModalOpen(false);
-          return;
-        }
-
-        // 1. Jeśli otwarty jest edytor wewn. dokumentu -> zamknij edytor
-        if (isDocFormOpen) {
-          e.stopPropagation();
-          setIsDocFormOpen(false);
-          return;
-        }
-
-        // 2. Jeśli otwarty jest modal edytora wpisu/notatki -> zamknij go
-        if (isModalOpen) {
-          e.stopPropagation();
-          setIsModalOpen(false);
-          return;
-        }
-
-        // 3. Jeśli otwarte jest okno Dokumenty -> zamknij je i wróć do menu
-        if (isDocsModalOpen) {
-          e.stopPropagation();
-          setIsDocsModalOpen(false);
-          return;
-        }
-
-        // 4. Jeśli otwarte jest okno AO Reference -> zamknij je i wróć do menu
-        if (isAoModalOpen) {
-          e.stopPropagation();
-          setIsAoModalOpen(false);
-          return;
-        }
-
-        // 5. Jeśli otwarty jest szczegółowy widok posta/artykułu -> cofnij do listy notatek
-        if (selectedArticleId !== null) {
-          e.stopPropagation();
-          setSelectedArticleId(null);
-          return;
-        }
-
-        // 6. Jeśli jesteśmy w widoku Notatki & Wpisy -> cofnij do głównego menu OrtoBazy
-        if (currentView === 'NOTATKI') {
-          e.stopPropagation();
-          setCurrentView('MENU');
-          return;
         }
       }
     };
@@ -178,16 +227,7 @@ export default function OrtoBazaView() {
     return () => {
       window.removeEventListener('keydown', handleKeyDownEsc, true);
     };
-  }, [
-    isProcedureFormOpen,
-    isProceduresModalOpen,
-    isDocFormOpen, 
-    isModalOpen, 
-    isDocsModalOpen, 
-    isAoModalOpen, 
-    selectedArticleId, 
-    currentView
-  ]);
+  }, [handleInternalBack]);
 
   useEffect(() => {
     localStorage.setItem('ortho_articles_pro', JSON.stringify(articles));
