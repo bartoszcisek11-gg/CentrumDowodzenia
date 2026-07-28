@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './LoginModal.css';
 import { importDatabase, restoreFromPayload } from '../utils/storage';
-import { getSavedClientId, requestDriveToken, downloadFromDrive } from '../utils/googleDriveSync';
+import { getSavedClientId, requestDriveToken, downloadFromDrive, getAccessToken } from '../utils/googleDriveSync';
 
 export default function LoginModal({ onLogin }) {
   const [password, setPassword] = useState('');
@@ -9,6 +9,7 @@ export default function LoginModal({ onLogin }) {
   const [isLoadingDrive, setIsLoadingDrive] = useState(false);
 
   const storedPassword = localStorage.getItem('app_user_password');
+  const isDriveConnected = Boolean(getAccessToken());
 
   const handlePasswordSubmit = (e) => {
     e.preventDefault();
@@ -193,24 +194,26 @@ export default function LoginModal({ onLogin }) {
               </button>
 
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                <button
-                  type="button"
-                  onClick={handleDriveDownload}
-                  disabled={isLoadingDrive}
-                  className="login-link"
-                  style={{
-                    background: 'rgba(0, 242, 255, 0.08)',
-                    border: '1px solid rgba(0, 242, 255, 0.25)',
-                    padding: '6px 12px',
-                    borderRadius: '14px',
-                    color: '#00f2ff',
-                    cursor: 'pointer',
-                    fontWeight: '600',
-                    fontSize: '0.78rem'
-                  }}
-                >
-                  {isLoadingDrive ? '⏳ Pobieranie z Dysku...' : '☁️ Synchronizuj z Google Drive'}
-                </button>
+                {!isDriveConnected && (
+                  <button
+                    type="button"
+                    onClick={handleDriveDownload}
+                    disabled={isLoadingDrive}
+                    className="login-link"
+                    style={{
+                      background: 'rgba(0, 242, 255, 0.08)',
+                      border: '1px solid rgba(0, 242, 255, 0.25)',
+                      padding: '6px 12px',
+                      borderRadius: '14px',
+                      color: '#00f2ff',
+                      cursor: 'pointer',
+                      fontWeight: '600',
+                      fontSize: '0.78rem'
+                    }}
+                  >
+                    {isLoadingDrive ? '⏳ Pobieranie z Dysku...' : '☁️ Synchronizuj z Google Drive'}
+                  </button>
+                )}
 
                 <label
                   className="login-link"

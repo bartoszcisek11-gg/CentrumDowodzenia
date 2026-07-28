@@ -34,24 +34,27 @@ export function setSavedClientId(clientId) {
   localStorage.setItem('google_drive_client_id', clientId.trim());
 }
 
-// Pobieranie aktywnego Access Tokena z sessionStorage
+// Pobieranie aktywnego Access Tokena z localStorage
 export function getAccessToken() {
-  const token = sessionStorage.getItem('gdrive_access_token');
-  const expiry = sessionStorage.getItem('gdrive_token_expiry');
+  const token = localStorage.getItem('gdrive_access_token') || sessionStorage.getItem('gdrive_access_token');
+  const expiry = localStorage.getItem('gdrive_token_expiry') || sessionStorage.getItem('gdrive_token_expiry');
   if (token && expiry && Date.now() < parseInt(expiry, 10)) {
     return token;
   }
   return null;
 }
 
-// Zapis Access Tokena
+// Zapis Access Tokena w localStorage
 export function saveAccessToken(token, expiresInSeconds = 3500) {
-  sessionStorage.setItem('gdrive_access_token', token);
-  sessionStorage.setItem('gdrive_token_expiry', (Date.now() + expiresInSeconds * 1000).toString());
+  const expiry = (Date.now() + expiresInSeconds * 1000).toString();
+  localStorage.setItem('gdrive_access_token', token);
+  localStorage.setItem('gdrive_token_expiry', expiry);
 }
 
 // Czyszczenie połączenia
 export function disconnectDrive() {
+  localStorage.removeItem('gdrive_access_token');
+  localStorage.removeItem('gdrive_token_expiry');
   sessionStorage.removeItem('gdrive_access_token');
   sessionStorage.removeItem('gdrive_token_expiry');
   localStorage.removeItem('gdrive_auto_sync');
@@ -117,7 +120,10 @@ export async function findDriveFile(accessToken) {
 
   if (!res.ok) {
     if (res.status === 401) {
+      localStorage.removeItem('gdrive_access_token');
+      localStorage.removeItem('gdrive_token_expiry');
       sessionStorage.removeItem('gdrive_access_token');
+      sessionStorage.removeItem('gdrive_token_expiry');
       throw new Error('Sesja Google wygasła. Zaloguj się ponownie.');
     }
     throw new Error('Błąd komunikacji z Google Drive.');
