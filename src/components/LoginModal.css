@@ -52,7 +52,7 @@
 .login-card {
   position: relative;
   z-index: 2;
-  width: 280px;
+  width: 270px;
   background-color: transparent;
   display: flex;
   flex-direction: column;
@@ -62,27 +62,27 @@
 
 .login-title {
   color: #00f2ff;
-  font-size: 1.8rem;
+  font-size: 1.55rem;
   font-weight: 700;
   margin-top: 0;
-  margin-bottom: 1.5rem;
+  margin-bottom: 0.8rem;
   letter-spacing: 1px;
   text-shadow: 0 0 10px rgba(0, 242, 255, 0.4);
 }
 
 .login-input {
   width: 100%;
-  padding: 12px 18px;
+  padding: 10px 16px;
   border-radius: 25px;
   border: 1px solid #1c2b3d;
   background-color: rgba(13, 19, 29, 0.85);
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   outline: none;
   box-sizing: border-box;
   text-align: center;
   transition: all 0.3s ease;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 .login-input::placeholder {
@@ -96,18 +96,18 @@
 
 .login-btn {
   width: 100%;
-  padding: 12px;
+  padding: 10px;
   background: linear-gradient(90deg, #00d2ff 0%, #00f2ff 100%);
   color: #0b0e14;
   border: none;
   border-radius: 25px;
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
   box-shadow: 0 0 15px rgba(0, 242, 255, 0.4);
   transition: all 0.3s ease;
-  margin-top: 5px;
-  margin-bottom: 15px;
+  margin-top: 4px;
+  margin-bottom: 10px;
 }
 
 .login-btn:hover {

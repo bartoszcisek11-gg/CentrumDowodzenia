@@ -82,6 +82,82 @@ export async function decryptPayload(encryptedObj, pin) {
   return JSON.parse(jsonStr);
 }
 
+export function getAppStorageObject() {
+  const storageObj = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key) {
+      storageObj[key] = localStorage.getItem(key);
+    }
+  }
+  return storageObj;
+}
+
+export async function createBackupPayload(pin) {
+  const currentPin = pin || sessionStorage.getItem('app_pin') || localStorage.getItem('app_user_password') || '123';
+  const storageObj = getAppStorageObject();
+  const backupData = {
+    version: "1.0",
+    timestamp: new Date().toISOString(),
+    storage: storageObj
+  };
+  return await encryptPayload(backupData, currentPin);
+}
+
+export async function restoreFromPayload(importedData, providedPin) {
+  let finalStorage = null;
+  let usedPin = providedPin || sessionStorage.getItem('app_pin') || localStorage.getItem('app_user_password');
+
+  if (importedData.encrypted || importedData.version === "2.0-encrypted" || importedData.ciphertext) {
+    let decryptedObj = null;
+
+    if (usedPin) {
+      try {
+        decryptedObj = await decryptPayload(importedData, usedPin);
+      } catch (e) {
+        decryptedObj = null;
+      }
+    }
+
+    if (!decryptedObj) {
+      const promptPin = window.prompt('Dane są zaszyfrowane. Podaj PIN / Hasło do odszyfrowania danych:');
+      if (!promptPin) return false;
+      try {
+        decryptedObj = await decryptPayload(importedData, promptPin);
+        usedPin = promptPin;
+      } catch (e) {
+        alert('❌ Nieprawidłowy PIN / Hasło lub plik jest uszkodzony! Odszyfrowanie nie powiodło się.');
+        return false;
+      }
+    }
+
+    if (decryptedObj && decryptedObj.storage) {
+      finalStorage = decryptedObj.storage;
+    } else {
+      alert('Błędna struktura odszyfrowanych danych!');
+      return false;
+    }
+  } else if (importedData.storage) {
+    finalStorage = importedData.storage;
+  } else {
+    alert('Błąd: Plik nie zawiera poprawnych danych kopii zapasowej.');
+    return false;
+  }
+
+  if (finalStorage) {
+    localStorage.clear();
+    Object.keys(finalStorage).forEach(key => {
+      localStorage.setItem(key, finalStorage[key]);
+    });
+    if (usedPin) {
+      localStorage.setItem('app_user_password', usedPin);
+      sessionStorage.setItem('app_pin', usedPin);
+    }
+    return { success: true, usedPin };
+  }
+  return false;
+}
+
 export const exportDatabase = async (customPin) => {
   const currentPin = customPin || sessionStorage.getItem('app_pin') || localStorage.getItem('app_user_password') || '123';
 
@@ -92,29 +168,14 @@ export const exportDatabase = async (customPin) => {
 
   if (!targetPin) return;
 
-  // Pobranie kluczy i wartości z localStorage w sposób bezpieczny dla wszystkich przeglądarek (w tym Safari / iPadOS)
-  const storageObj = {};
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key) {
-      storageObj[key] = localStorage.getItem(key);
-    }
-  }
-
-  const backupData = {
-    version: "1.0",
-    timestamp: new Date().toISOString(),
-    storage: storageObj
-  };
-
   try {
-    const encryptedFileObj = await encryptPayload(backupData, targetPin);
+    const encryptedFileObj = await createBackupPayload(targetPin);
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(encryptedFileObj, null, 2));
     const downloadAnchor = document.createElement('a');
     const dzisiaj = new Date().toISOString().split('T')[0];
 
     downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `centrum_dowodzenia_backup_encrypted_${dzisiaj}.json`);
+    downloadAnchor.setAttribute("download", `centrumdowodzenia_backup_encrypted_${dzisiaj}.json`);
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
@@ -134,58 +195,12 @@ export const importDatabase = (file, onSuccess, providedPin) => {
     try {
       const importedData = JSON.parse(fileReader.result);
 
-      let finalStorage = null;
-      let usedPin = providedPin || sessionStorage.getItem('app_pin') || localStorage.getItem('app_user_password');
-
-      if (importedData.encrypted || importedData.version === "2.0-encrypted" || importedData.ciphertext) {
-        let decryptedObj = null;
-
-        if (usedPin) {
-          try {
-            decryptedObj = await decryptPayload(importedData, usedPin);
-          } catch (e) {
-            decryptedObj = null;
-          }
-        }
-
-        if (!decryptedObj) {
-          const promptPin = window.prompt('Plik jest zaszyfrowany. Podaj PIN / Hasło do odszyfrowania pliku:');
-          if (!promptPin) return;
-          try {
-            decryptedObj = await decryptPayload(importedData, promptPin);
-            usedPin = promptPin;
-          } catch (e) {
-            alert('❌ Nieprawidłowy PIN / Hasło lub plik jest uszkodzony! Odszyfrowanie nie powiodło się.');
-            return;
-          }
-        }
-
-        if (decryptedObj && decryptedObj.storage) {
-          finalStorage = decryptedObj.storage;
-        } else {
-          alert('Błędna struktura odszyfrowanego pliku!');
-          return;
-        }
-      } else if (importedData.storage) {
-        finalStorage = importedData.storage;
-      } else {
-        alert('Błąd: Plik nie zawiera poprawnych danych kopii zapasowej.');
-        return;
-      }
-
       if (window.confirm('Czy na pewno chcesz nadpisać obecne dane danymi z pliku?')) {
-        if (finalStorage) {
-          localStorage.clear();
-          Object.keys(finalStorage).forEach(key => {
-            localStorage.setItem(key, finalStorage[key]);
-          });
-          if (usedPin) {
-            localStorage.setItem('app_user_password', usedPin);
-            sessionStorage.setItem('app_pin', usedPin);
-          }
+        const result = await restoreFromPayload(importedData, providedPin);
+        if (result && result.success) {
+          alert('🔒 Dane zostały pomyślnie odszyfrowane i zaimportowane!');
+          if (onSuccess) onSuccess(result.usedPin);
         }
-        alert('🔒 Dane zostały pomyślnie odszyfrowane i zaimportowane!');
-        if (onSuccess) onSuccess(usedPin);
       }
     } catch (e) {
       console.error(e);

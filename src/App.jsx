@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import LoginModal from './components/LoginModal';
 import MainDashboard from './components/MainDashboard';
 import ClearDataButton from './components/ClearDataButton';
+import GoogleDriveModal from './components/GoogleDriveModal';
 
 // Moduły
 import OrtoBazaView from './modules/OrtoBaza/OrtoBazaView';
@@ -10,7 +11,8 @@ import StazView from './modules/StazCalculator/StazView';
 import FinancesView from './modules/Finances/FinancesView';
 import WorkView from './modules/WorkWorksheets/WorkView';
 
-import { exportDatabase, importDatabase } from './utils/storage';
+import { exportDatabase, importDatabase, createBackupPayload } from './utils/storage';
+import { getAccessToken, uploadToDrive } from './utils/googleDriveSync';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -22,6 +24,15 @@ export default function App() {
   
   // Stan podświetlenia dla przycisku Wyloguj
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
+
+  // Stan modala Google Drive
+  const [isDriveModalOpen, setIsDriveModalOpen] = useState(false);
+  const [isDriveConnected, setIsDriveConnected] = useState(() => !!getAccessToken());
+
+  // Odświeżanie stanu połączenia Google Drive przy otwarciu
+  useEffect(() => {
+    setIsDriveConnected(!!getAccessToken());
+  }, [isDriveModalOpen]);
 
   // Rejestracja dedykowanej obsługi powrotu z aktywnego modułu
   const backHandlerRef = useRef(null);
@@ -94,7 +105,18 @@ export default function App() {
     const file = e.target.files[0];
     if (!file) return;
 
-    importDatabase(file, () => {
+    importDatabase(file, async () => {
+      // Jeśli użytkownik jest połączony z Google Drive, zaktualizuj plik centrumdowodzenia.json na dysku
+      const token = getAccessToken();
+      if (token) {
+        try {
+          const payload = await createBackupPayload();
+          await uploadToDrive(token, payload);
+          console.log('Automatycznie zaktualizowano zbiór na Google Drive po imporcie JSON');
+        } catch (err) {
+          console.error('Błąd auto-synchronizacji z Google Drive:', err);
+        }
+      }
       window.location.reload();
     });
   };
@@ -117,13 +139,22 @@ export default function App() {
   return (
     <div className="app-root">
       <header className="app-header" style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        {/* LEWA STRONA NAGŁÓWKA (Przycisk Powrót) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '15px', zIndex: 2, minHeight: '38px' }}>
+        {/* LEWA STRONA NAGŁÓWKA (Przycisk Powrót oraz Przyciski Import/Eksport) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', zIndex: 2, minHeight: '38px' }}>
           {currentApp && (
             <button onClick={handleGoBack} className="btn-save">
               ⬅️ Powrót
             </button>
           )}
+
+          <button onClick={exportDatabase} className="btn-global-io">
+            📥 Eksport JSON
+          </button>
+          
+          <label className="btn-global-io" style={{ margin: 0, cursor: 'pointer' }}>
+            📤 Import JSON
+            <input type="file" accept=".json" onChange={handleImportFile} style={{ display: 'none' }} />
+          </label>
         </div>
 
         {/* ŚRODEK NAGŁÓWKA (Wyśrodkowana nazwa aktywnej zakładki / Centrum Dowodzenia) */}
@@ -139,16 +170,28 @@ export default function App() {
           {currentAppTitle || 'Centrum Dowodzenia'}
         </h1>
 
-        {/* PRAWA STRONA NAGŁÓWKA (Przyciski Import/Eksport/Wyloguj) */}
+        {/* PRAWA STRONA NAGŁÓWKA (Przycisk Dysk Google oraz Wyloguj) */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', zIndex: 2 }}>
-          <button onClick={exportDatabase} className="btn-global-io">
-            📥 Eksport JSON
+          <button 
+            onClick={() => setIsDriveModalOpen(true)} 
+            className="btn-global-io" 
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+            title="Konfiguracja i synchronizacja z Google Drive"
+          >
+            ☁️ Dysk Google
+            {isDriveConnected && (
+              <span 
+                style={{ 
+                  width: '8px', 
+                  height: '8px', 
+                  borderRadius: '50%', 
+                  backgroundColor: '#3fb950',
+                  boxShadow: '0 0 6px #3fb950' 
+                }} 
+                title="Połączono"
+              />
+            )}
           </button>
-          
-          <label className="btn-global-io" style={{ margin: 0, cursor: 'pointer' }}>
-            📤 Import JSON
-            <input type="file" accept=".json" onChange={handleImportFile} style={{ display: 'none' }} />
-          </label>
 
           {/* Przycisk Wyloguj – podświetlenie na czerwono po najechaniu */}
           <button 
@@ -177,6 +220,12 @@ export default function App() {
       </main>
 
       <ClearDataButton />
+
+      <GoogleDriveModal 
+        isOpen={isDriveModalOpen} 
+        onClose={() => setIsDriveModalOpen(false)}
+        onDataRestored={() => window.location.reload()}
+      />
     </div>
   );
 }

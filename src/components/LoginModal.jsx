@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import './LoginModal.css';
-import { importDatabase } from '../utils/storage';
+import { importDatabase, restoreFromPayload } from '../utils/storage';
+import { getSavedClientId, requestDriveToken, downloadFromDrive } from '../utils/googleDriveSync';
 
 export default function LoginModal({ onLogin }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoadingDrive, setIsLoadingDrive] = useState(false);
 
   const storedPassword = localStorage.getItem('app_user_password');
 
@@ -18,6 +20,42 @@ export default function LoginModal({ onLogin }) {
       onLogin();
     } else {
       setError('Niepoprawne hasło!');
+    }
+  };
+
+  const handleDriveDownload = async () => {
+    let clientId = getSavedClientId();
+    if (!clientId) {
+      clientId = window.prompt(
+        'Podaj swój Google OAuth Client ID (wygenerowany w Google Cloud Console dla Twojej domeny):',
+        ''
+      );
+      if (!clientId) return;
+      setSavedClientId(clientId);
+    }
+
+    setError('');
+    setIsLoadingDrive(true);
+
+    try {
+      const token = await requestDriveToken(clientId.trim());
+      const driveData = await downloadFromDrive(token);
+      const result = await restoreFromPayload(driveData, password);
+
+      if (result && result.success) {
+        sessionStorage.setItem('app_authenticated', 'true');
+        if (result.usedPin) {
+          sessionStorage.setItem('app_pin', result.usedPin);
+        }
+        onLogin();
+      } else {
+        setError('Nie udało się odblokować bazy danych.');
+      }
+    } catch (err) {
+      console.error(err);
+      setError(`Błąd Google Drive: ${err.message}`);
+    } finally {
+      setIsLoadingDrive(false);
     }
   };
 
@@ -84,21 +122,62 @@ export default function LoginModal({ onLogin }) {
           <h2 className="login-title">Centrum Dowodzenia</h2>
 
           {!storedPassword ? (
-            <div>
-              <p style={{ color: '#52677d', fontSize: '0.85rem', marginBottom: '1.5rem' }}>
-                Zaimportuj plik <strong>JSON</strong>, aby odblokować bazę danych.
+            /* WARIANT 1: Nowe urządzenie (brak zarejestrowanego hasła/bazy) */
+            <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+              <p style={{ color: '#8b949e', fontSize: '0.8rem', margin: '0 0 4px 0', lineHeight: '1.3' }}>
+                Zaloguj się kontem Google, aby automatycznie pobrać Twoją bazę z Dysku.
               </p>
-              <label className="login-btn" style={{ display: 'block', margin: 0, cursor: 'pointer' }}>
-                📤 Wgraj plik JSON
+
+              {error && <div className="login-error">{error}</div>}
+
+              {/* Główny turkusowy przycisk Zaloguj z Google Drive */}
+              <button
+                type="button"
+                onClick={handleDriveDownload}
+                disabled={isLoadingDrive}
+                className="login-btn"
+                style={{ margin: '4px 0 0 0' }}
+              >
+                {isLoadingDrive ? '⏳ Łączenie z Google...' : '☁️ Zaloguj z Google Drive'}
+              </button>
+
+              {/* Mniejszy, dyskretny przycisk Wgraj plik JSON */}
+              <label
+                className="login-link"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  marginTop: '4px',
+                  padding: '5px 12px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  color: '#8b949e',
+                  fontSize: '0.78rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#00f2ff';
+                  e.currentTarget.style.borderColor = 'rgba(0, 242, 255, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#8b949e';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                }}
+              >
+                📂 Wgraj plik JSON
                 <input type="file" accept=".json" onChange={handleFileImport} style={{ display: 'none' }} />
               </label>
             </div>
           ) : (
-            <form onSubmit={handlePasswordSubmit} style={{ width: '100%' }}>
+            /* WARIANT 2: Urządzenie z zapisanym hasłem/bazą */
+            <form onSubmit={handlePasswordSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <input
                 type="password"
                 className="login-input"
-                placeholder="Hasło"
+                placeholder="Hasło / PIN"
                 value={password}
                 onChange={(e) => {
                   setPassword(e.target.value);
@@ -110,13 +189,44 @@ export default function LoginModal({ onLogin }) {
               {error && <div className="login-error">{error}</div>}
 
               <button type="submit" className="login-btn">
-                Login
+                🔑 Zaloguj
               </button>
 
-              <label className="login-link" style={{ display: 'inline-block', marginTop: '5px' }}>
-                Wgraj inny plik JSON
-                <input type="file" accept=".json" onChange={handleFileImport} style={{ display: 'none' }} />
-              </label>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  onClick={handleDriveDownload}
+                  disabled={isLoadingDrive}
+                  className="login-link"
+                  style={{
+                    background: 'rgba(0, 242, 255, 0.08)',
+                    border: '1px solid rgba(0, 242, 255, 0.25)',
+                    padding: '6px 12px',
+                    borderRadius: '14px',
+                    color: '#00f2ff',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '0.78rem'
+                  }}
+                >
+                  {isLoadingDrive ? '⏳ Pobieranie z Dysku...' : '☁️ Synchronizuj z Google Drive'}
+                </button>
+
+                <label
+                  className="login-link"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    color: '#8b949e',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer'
+                  }}
+                >
+                  📂 Wgraj plik JSON
+                  <input type="file" accept=".json" onChange={handleFileImport} style={{ display: 'none' }} />
+                </label>
+              </div>
             </form>
           )}
         </div>
