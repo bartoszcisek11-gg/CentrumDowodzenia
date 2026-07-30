@@ -145,10 +145,25 @@ export async function restoreFromPayload(importedData, providedPin) {
   }
 
   if (finalStorage) {
+    // Zachowanie aktywnej sesji Google Drive przed czyszczeniem localStorage
+    const currentDriveToken = localStorage.getItem('gdrive_access_token');
+    const currentDriveExpiry = localStorage.getItem('gdrive_token_expiry');
+    const currentDriveEmail = localStorage.getItem('gdrive_user_email');
+    const currentDriveClientId = localStorage.getItem('google_drive_client_id');
+    const currentDriveAutoSync = localStorage.getItem('gdrive_auto_sync');
+
     localStorage.clear();
     Object.keys(finalStorage).forEach(key => {
       localStorage.setItem(key, finalStorage[key]);
     });
+
+    // Przywrócenie zachowanej sesji Google Drive, jeśli była aktywna
+    if (currentDriveToken) localStorage.setItem('gdrive_access_token', currentDriveToken);
+    if (currentDriveExpiry) localStorage.setItem('gdrive_token_expiry', currentDriveExpiry);
+    if (currentDriveEmail) localStorage.setItem('gdrive_user_email', currentDriveEmail);
+    if (currentDriveClientId) localStorage.setItem('google_drive_client_id', currentDriveClientId);
+    if (currentDriveAutoSync) localStorage.setItem('gdrive_auto_sync', currentDriveAutoSync);
+
     if (usedPin) {
       localStorage.setItem('app_user_password', usedPin);
       sessionStorage.setItem('app_pin', usedPin);
