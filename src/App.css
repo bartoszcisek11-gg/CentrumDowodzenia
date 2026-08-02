@@ -739,7 +739,7 @@ main {
 }
 
 .form-drawer.open {
-  max-height: 120px;
+  max-height: 500px;
   opacity: 1;
   padding: 15px;
   border-color: var(--border);
@@ -1999,5 +1999,253 @@ main {
   transform: translateY(0) !important;
   box-shadow: 0 0 10px rgba(0, 242, 255, 0.4) !important;
 }
+
+/* Przycisk Anuluj w OrtoBazie z eleganckim podświetleniem po najechaniu */
+.btn-orto-cancel {
+  padding: 8px 16px;
+  background-color: transparent !important;
+  color: #94a3b8 !important;
+  border: 1px solid #1c2b3d !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+}
+
+.btn-orto-cancel:hover {
+  background-color: #1c2b3d !important;
+  color: #ffffff !important;
+  border-color: #00f2ff !important;
+  box-shadow: 0 0 12px rgba(0, 242, 255, 0.25) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-orto-cancel:active {
+  transform: translateY(0) !important;
+  box-shadow: none !important;
+}
+
+/* --- KLASY DLA HEADER I PRZYCISKÓW AKCJI --- */
+.app-header {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--card-bg);
+  padding: 0.8rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(0, 242, 255, 0.05);
+  gap: 15px;
+}
+
+.header-actions-left,
+.header-actions-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 2;
+  min-height: 38px;
+}
+
+.header-app-title {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+}
+
+.drive-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #3fb950;
+  box-shadow: 0 0 6px #3fb950;
+  display: inline-block;
+  margin-left: 2px;
+}
+
+.btn-logout {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #21262d;
+  color: #f85149;
+  border: 1px solid #363b42;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  box-sizing: border-box;
+}
+
+.btn-logout.hovered,
+.btn-logout:hover {
+  background-color: #b3261e;
+  color: #ffffff;
+  border-color: #f85149;
+}
+
+.btn-back-nav {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+}
+
+/* --- OPTYMALIZACJE DLA WERSJI MOBILNEJ (MOBILE RESPONSIVENESS) --- */
+@media (max-width: 840px) {
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.75rem 1rem;
+    gap: 10px;
+  }
+
+  .header-app-title {
+    position: static;
+    transform: none;
+    text-align: center;
+    font-size: 1.15rem;
+    pointer-events: auto;
+    width: 100%;
+    order: -1;
+  }
+
+  .header-actions-left,
+  .header-actions-right {
+    justify-content: center;
+    flex-wrap: wrap;
+    width: 100%;
+    gap: 6px;
+  }
+
+  main {
+    padding: 0.85rem;
+    padding-bottom: 75px;
+  }
+
+  /* Kafelki w Centrum Dowodzenia */
+  .tiles-grid {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .app-tile {
+    padding: 14px 8px !important;
+    min-height: 95px !important;
+  }
+
+  .tile-icon {
+    font-size: 1.7rem !important;
+    margin-bottom: 4px !important;
+  }
+
+  .tile-title {
+    font-size: 0.8rem !important;
+    word-break: break-word;
+  }
+
+  /* Sekcje / Widgety na dashboardzie */
+  .dashboard-widget-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+
+  /* Przewijalne zakładki w modułach */
+  .tabs-container,
+  .main-tabs,
+  .tabs-nav,
+  .orto-tabs,
+  .finances-tabs,
+  .work-tabs {
+    display: flex !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    padding-bottom: 6px !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  
+  .tabs-container::-webkit-scrollbar,
+  .main-tabs::-webkit-scrollbar,
+  .tabs-nav::-webkit-scrollbar,
+  .orto-tabs::-webkit-scrollbar,
+  .finances-tabs::-webkit-scrollbar,
+  .work-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Dwukolumnowe układy w finansach i innych na 1 kolumnę */
+  .grid-2col, .grid-2, .grid-3, .grid-4, .form-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Formularze transakcji i wpisów na 1 kolumnę na wąskich ekranach */
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  /* Kontenery tabel z przewijaniem dotykowym */
+  .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+  }
+
+  /* Modale dostosowane do wąskich ekranów telefonów */
+  .modal-container,
+  .modal-dialog,
+  .drive-modal-content {
+    width: 95vw !important;
+    max-width: 100% !important;
+    max-height: 90vh !important;
+    padding: 16px !important;
+    border-radius: 12px !important;
+    overflow-y: auto !important;
+  }
+
+  /* Przycisk wyczyszczenia bazy */
+  .btn-clear-all {
+    bottom: 10px;
+    right: 10px;
+    padding: 6px 12px;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn-label-text {
+    font-size: 0.78rem;
+  }
+
+  .btn-global-io,
+  .btn-logout,
+  .btn-save {
+    padding: 0 8px;
+    height: 34px;
+    font-size: 0.78rem;
+  }
+
+  .tiles-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
 
 

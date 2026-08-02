@@ -676,7 +676,7 @@ export default function OrtoBazaView({ onRegisterBack }) {
 
       {/* WIDOK GŁÓWNEGO MENU (3 Kafelki z Drag & Drop - Same tytuły) */}
       {currentView === 'MENU' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginTop: '20px' }}>
           {tilesOrder.map((tile, index) => (
             <div
               key={tile.id}
@@ -696,7 +696,7 @@ export default function OrtoBazaView({ onRegisterBack }) {
                 backgroundColor: '#111622',
                 border: draggedTileIndex === index ? '2px dashed #00f2ff' : '1px solid #1c2b3d',
                 borderRadius: '16px',
-                padding: '50px 20px',
+                padding: '40px 20px',
                 cursor: 'grab',
                 display: 'flex',
                 flexDirection: 'column',
@@ -707,7 +707,7 @@ export default function OrtoBazaView({ onRegisterBack }) {
                 boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
                 opacity: draggedTileIndex === index ? 0.5 : 1,
                 userSelect: 'none',
-                touchAction: 'none'
+                touchAction: 'pan-y'
               }}
               onMouseEnter={(e) => {
                 if (draggedTileIndex === null) e.currentTarget.style.borderColor = '#00f2ff';
@@ -1060,7 +1060,7 @@ export default function OrtoBazaView({ onRegisterBack }) {
                     <button
                       type="button"
                       onClick={() => setIsDocFormOpen(false)}
-                      style={{ padding: '8px 16px', backgroundColor: 'transparent', border: '1px solid #1c2b3d', color: '#94a3b8', borderRadius: '6px', cursor: 'pointer' }}
+                      className="btn-orto-cancel"
                     >
                       Anuluj
                     </button>
@@ -1284,7 +1284,7 @@ export default function OrtoBazaView({ onRegisterBack }) {
                     <button
                       type="button"
                       onClick={() => setIsProcedureFormOpen(false)}
-                      style={{ padding: '8px 16px', backgroundColor: 'transparent', border: '1px solid #1c2b3d', color: '#94a3b8', borderRadius: '6px', cursor: 'pointer' }}
+                      className="btn-orto-cancel"
                     >
                       Anuluj
                     </button>
@@ -1532,7 +1532,7 @@ export default function OrtoBazaView({ onRegisterBack }) {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  style={{ padding: '10px 20px', backgroundColor: 'transparent', border: '1px solid #1c2b3d', color: '#94a3b8', borderRadius: '8px', cursor: 'pointer', fontWeight: '600' }}
+                  className="btn-orto-cancel"
                 >
                   Anuluj
                 </button>

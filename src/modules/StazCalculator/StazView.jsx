@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { dodajDniRobocze, policzDniRoboczeMiedzy, formatujDate } from '../../utils/dateUtils';
 
-export default function StazView({ onOpenModal }) {
+export default function StazView({ onRegisterBack }) {
   const [daneStaz, setDaneStaz] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('stazData'));
@@ -249,9 +249,6 @@ export default function StazView({ onOpenModal }) {
         <div className="header-actions">
           <button className="btn-print" onClick={() => window.print()}>
             <span>🖨️ Drukuj zestawienie</span>
-          </button>
-          <button className="btn-help" onClick={onOpenModal}>
-            <span>❓ Zasady obliczania</span>
           </button>
         </div>
       </div>

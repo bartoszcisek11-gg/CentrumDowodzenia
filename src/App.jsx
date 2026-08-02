@@ -138,57 +138,42 @@ export default function App() {
 
   return (
     <div className="app-root">
-      <header className="app-header" style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <header className="app-header">
         {/* LEWA STRONA NAGŁÓWKA (Przycisk Powrót oraz Przyciski Import/Eksport) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', zIndex: 2, minHeight: '38px' }}>
+        <div className="header-actions-left">
           {currentApp && (
-            <button onClick={handleGoBack} className="btn-save">
-              ⬅️ Powrót
+            <button onClick={handleGoBack} className="btn-save btn-back-nav" title="Powrót">
+              ⬅️ <span className="btn-label-text">Powrót</span>
             </button>
           )}
 
-          <button onClick={exportDatabase} className="btn-global-io">
-            📥 Eksport JSON
+          <button onClick={exportDatabase} className="btn-global-io" title="Eksportuj plik JSON z danymi">
+            📥 <span className="btn-label-text">Eksport JSON</span>
           </button>
           
-          <label className="btn-global-io" style={{ margin: 0, cursor: 'pointer' }}>
-            📤 Import JSON
+          <label className="btn-global-io" style={{ margin: 0, cursor: 'pointer' }} title="Importuj plik JSON z danymi">
+            📤 <span className="btn-label-text">Import JSON</span>
             <input type="file" accept=".json" onChange={handleImportFile} style={{ display: 'none' }} />
           </label>
         </div>
 
         {/* ŚRODEK NAGŁÓWKA (Wyśrodkowana nazwa aktywnej zakładki / Centrum Dowodzenia) */}
-        <h1 style={{
-          position: 'absolute',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          margin: 0,
-          pointerEvents: 'none',
-          whiteSpace: 'nowrap',
-          zIndex: 1
-        }}>
+        <h1 className="header-app-title">
           {currentAppTitle || 'Centrum Dowodzenia'}
         </h1>
 
         {/* PRAWA STRONA NAGŁÓWKA (Przycisk Dysk Google oraz Wyloguj) */}
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', zIndex: 2 }}>
+        <div className="header-actions-right">
           <button 
             onClick={() => setIsDriveModalOpen(true)} 
             className="btn-global-io" 
-            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             title="Konfiguracja i synchronizacja z Google Drive"
           >
-            ☁️ Dysk Google
+            ☁️ <span className="btn-label-text">Dysk Google</span>
             {isDriveConnected && (
               <span 
-                style={{ 
-                  width: '8px', 
-                  height: '8px', 
-                  borderRadius: '50%', 
-                  backgroundColor: '#3fb950',
-                  boxShadow: '0 0 6px #3fb950' 
-                }} 
-                title="Połączono"
+                className="drive-status-dot" 
+                title="Połączono z Google Drive"
               />
             )}
           </button>
@@ -198,19 +183,10 @@ export default function App() {
             onClick={handleLogout} 
             onMouseEnter={() => setIsLogoutHovered(true)}
             onMouseLeave={() => setIsLogoutHovered(false)}
-            style={{ 
-              padding: '6px 12px',
-              fontSize: '0.85rem',
-              fontWeight: 'bold',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              backgroundColor: isLogoutHovered ? '#b3261e' : '#21262d', 
-              color: isLogoutHovered ? '#ffffff' : '#f85149', 
-              border: isLogoutHovered ? '1px solid #f85149' : '1px solid #363b42',
-              transition: 'all 0.2s ease'
-            }}
+            className={`btn-logout ${isLogoutHovered ? 'hovered' : ''}`}
+            title="Wyloguj z aplikacji"
           >
-            🔒 Wyloguj
+            🔒 <span className="btn-label-text">Wyloguj</span>
           </button>
         </div>
       </header>
