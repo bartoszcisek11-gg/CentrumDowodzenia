@@ -1,6 +1,8 @@
 import React, { useState, useRef } from 'react';
 import ICloudCalendar from './ICloudCalendar';
 import Reminders from './Reminders';
+import RadioZet from './RadioZet';
+import RadioIcon from './RadioIcon';
 
 const GoogleDriveLogo = (
   <svg width="40" height="40" viewBox="-10 -10 120 107" style={{ display: 'inline-block', verticalAlign: 'middle' }}>
@@ -126,11 +128,11 @@ function ResizableWidget({
   };
 
   const isCustomized = typeof size.width === 'number' || typeof size.height === 'number';
+  const isFullWidth = id === 'tiles' || size.width === '100%';
 
   const style = {
     width: typeof size.width === 'number' ? `${size.width}px` : size.width,
     height: typeof size.height === 'number' ? `${size.height}px` : size.height,
-    flex: typeof size.width === 'number' ? `0 0 ${size.width}px` : (defaultWidth === '100%' ? '1 1 100%' : '1 1 320px'),
     maxWidth: '100%',
   };
 
@@ -138,7 +140,7 @@ function ResizableWidget({
     <div
       ref={widgetRef}
       data-section-id={id}
-      className={`dashboard-widget-card ${isSectionDragging ? 'section-dragging' : ''} ${isSectionDragOver ? 'drag-over' : ''}`}
+      className={`dashboard-widget-card ${isFullWidth ? 'widget-full-width' : ''} ${isSectionDragging ? 'section-dragging' : ''} ${isSectionDragOver ? 'drag-over' : ''}`}
       style={style}
       onDragOver={(e) => onSectionDragOver(e, id)}
       onDragLeave={(e) => onSectionDragLeave(e, id)}
@@ -207,12 +209,12 @@ function ResizableWidget({
 }
 
 export default function MainDashboard({ onOpenApp }) {
-  // Przechowywanie kolejności głównych sekcji (Kafelki, Kalendarz, Przypomnienia)
+  // Przechowywanie kolejności głównych sekcji (Kafelki, Kalendarz, Przypomnienia, Radio ZET)
   const [sectionsOrder, setSectionsOrder] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('dashboard_sections_order'));
       if (saved && Array.isArray(saved) && saved.length > 0) {
-        const allowed = ['tiles', 'calendar', 'reminders'];
+        const allowed = ['tiles', 'calendar', 'reminders', 'radiozet'];
         const filtered = saved.filter(s => allowed.includes(s));
         allowed.forEach(s => { if (!filtered.includes(s)) filtered.push(s); });
         return filtered;
@@ -220,7 +222,7 @@ export default function MainDashboard({ onOpenApp }) {
     } catch (e) {
       console.error('Błąd odczytu dashboard_sections_order:', e);
     }
-    return ['tiles', 'calendar', 'reminders'];
+    return ['tiles', 'calendar', 'reminders', 'radiozet'];
   });
 
   const [draggedSection, setDraggedSection] = useState(null);
@@ -673,7 +675,7 @@ export default function MainDashboard({ onOpenApp }) {
           onSectionTouchEnd={handleSectionTouchEnd}
           isSectionDragging={draggedSection === 'calendar'}
           isSectionDragOver={dragOverSection === 'calendar'}
-          defaultWidth="calc(66% - 0.75rem)"
+          defaultWidth="100%"
           defaultHeight="480px"
           minWidth={300}
           minHeight={300}
@@ -702,14 +704,43 @@ export default function MainDashboard({ onOpenApp }) {
           onSectionTouchEnd={handleSectionTouchEnd}
           isSectionDragging={draggedSection === 'reminders'}
           isSectionDragOver={dragOverSection === 'reminders'}
-          defaultWidth="calc(34% - 0.75rem)"
-          defaultHeight="480px"
+          defaultWidth="100%"
+          defaultHeight="280px"
           minWidth={260}
-          minHeight={250}
+          minHeight={200}
           storageKey="dashboard_reminders_size"
           allowResize={true}
         >
           <Reminders />
+        </ResizableWidget>
+      );
+    }
+
+    if (sectionId === 'radiozet') {
+      return (
+        <ResizableWidget
+          key="section-radiozet"
+          id="radiozet"
+          title="Radio"
+          icon={<RadioIcon style={{ width: '22px', height: '22px' }} />}
+          onSectionDragStart={handleSectionDragStart}
+          onSectionDragOver={handleSectionDragOver}
+          onSectionDragLeave={handleSectionDragLeave}
+          onSectionDrop={handleSectionDrop}
+          onSectionDragEnd={handleSectionDragEnd}
+          onSectionTouchStart={handleSectionTouchStart}
+          onSectionTouchMove={handleSectionTouchMove}
+          onSectionTouchEnd={handleSectionTouchEnd}
+          isSectionDragging={draggedSection === 'radiozet'}
+          isSectionDragOver={dragOverSection === 'radiozet'}
+          defaultWidth="100%"
+          defaultHeight="120px"
+          minWidth={260}
+          minHeight={90}
+          storageKey="dashboard_radiozet_size"
+          allowResize={true}
+        >
+          <RadioZet />
         </ResizableWidget>
       );
     }

@@ -33,6 +33,7 @@ export default function FinancesView({ onRegisterBack }) {
   const [inputOpis, setInputOpis] = useState('');
   const [inputKwota, setInputKwota] = useState('');
   const [inputTyp, setInputTyp] = useState('Przychód');
+  const [editingTxIndex, setEditingTxIndex] = useState(null);
 
   const [inputStanData, setInputStanData] = useState(new Date().toISOString().slice(0, 7));
   const [inputStanKwota, setInputStanKwota] = useState('');
@@ -66,26 +67,56 @@ export default function FinancesView({ onRegisterBack }) {
     localStorage.setItem('finanse_baza_v4', JSON.stringify(baza));
   }, [baza]);
 
-  const dodajTransakcje = () => {
+  const zapiszTransakcje = () => {
     const kwotaRaw = parseFloat(inputKwota);
     if (!inputData || !inputOpis.trim() || isNaN(kwotaRaw) || kwotaRaw <= 0) {
       alert('Wypełnij poprawnie wszystkie pola!');
       return;
     }
     const kwota = inputTyp === 'Wydatek' ? -kwotaRaw : kwotaRaw;
-    const newTransakcje = [...baza.transakcje, { data: inputData, opis: inputOpis.trim(), kwota, typ: inputTyp }];
+    const nowaTransakcja = { data: inputData, opis: inputOpis.trim(), kwota, typ: inputTyp };
+
+    let newTransakcje = [...baza.transakcje];
+    if (editingTxIndex !== null && editingTxIndex >= 0 && editingTxIndex < newTransakcje.length) {
+      newTransakcje[editingTxIndex] = nowaTransakcja;
+    } else {
+      newTransakcje.push(nowaTransakcja);
+    }
     newTransakcje.sort((a, b) => a.data.localeCompare(b.data));
 
     setBaza(prev => ({ ...prev, transakcje: newTransakcje }));
     setInputOpis('');
     setInputKwota('');
+    setEditingTxIndex(null);
     setIsFormOpen(false);
     setAktywnyMiesiac(inputData.substring(0, 7));
+  };
+
+  const edytujTransakcje = (globalIdx) => {
+    const t = baza.transakcje[globalIdx];
+    if (!t) return;
+    setEditingTxIndex(globalIdx);
+    setInputData(t.data);
+    setInputOpis(t.opis);
+    setInputKwota(Math.abs(t.kwota).toString());
+    setInputTyp(t.kwota < 0 ? 'Wydatek' : 'Przychód');
+    setIsFormOpen(true);
+  };
+
+  const anulujEdycjeTransakcji = () => {
+    setEditingTxIndex(null);
+    setInputOpis('');
+    setInputKwota('');
+    setInputData(new Date().toISOString().split('T')[0]);
+    setInputTyp('Przychód');
   };
 
   const usunTransakcje = (idx) => {
     if (window.confirm('Czy na pewno chcesz usunąć ten wpis?')) {
       setBaza(prev => ({ ...prev, transakcje: prev.transakcje.filter((_, i) => i !== idx) }));
+      if (editingTxIndex === idx) {
+        anulujEdycjeTransakcji();
+      }
     }
   };
 
@@ -224,8 +255,17 @@ export default function FinancesView({ onRegisterBack }) {
         </div>
 
         <div className={`tab-content ${activeTab === 'przychody' ? 'active' : ''}`}>
-          <button className="btn-toggle-panel" onClick={() => setIsFormOpen(!isFormOpen)}>
-            {isFormOpen ? '✕ Zamknij formularz' : '✨ Dodaj nową transakcję (Przychód / Wydatek)'}
+          <button className="btn-toggle-panel" onClick={() => {
+            if (isFormOpen && editingTxIndex !== null) {
+              anulujEdycjeTransakcji();
+            }
+            setIsFormOpen(!isFormOpen);
+          }}>
+            {isFormOpen 
+              ? '✕ Zamknij formularz' 
+              : (editingTxIndex !== null 
+                  ? '✏️ Edytujesz transakcję (Otwórz formularz)' 
+                  : '✨ Dodaj nową transakcję (Przychód / Wydatek)')}
           </button>
 
           <div className={`form-drawer ${isFormOpen ? 'open' : ''}`}>
@@ -240,7 +280,16 @@ export default function FinancesView({ onRegisterBack }) {
                 <option value="Przychód">Przychód</option>
                 <option value="Wydatek">Wydatek</option>
               </select>
-              <button className="btn-save" onClick={dodajTransakcje}>Zapisz</button>
+              <div style={{ display: 'flex', gap: '8px', gridColumn: 'span 2' }}>
+                <button className="btn-save" onClick={zapiszTransakcje} style={{ flex: 1 }}>
+                  {editingTxIndex !== null ? 'Zapisz zmiany' : 'Zapisz'}
+                </button>
+                {editingTxIndex !== null && (
+                  <button type="button" className="btn-orto-cancel" onClick={anulujEdycjeTransakcji}>
+                    Anuluj
+                  </button>
+                )}
+              </div>
             </div>
           </div>
           <div className="month-tabs">
@@ -251,24 +300,54 @@ export default function FinancesView({ onRegisterBack }) {
 
           <div className="grid-2col">
             <div className="card">
-              <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase' }}>
-                HISTORIA TRANSAKCJI (Podwójne kliknięcie usuwa)
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase' }}>
+                  HISTORIA TRANSAKCJI (PODWÓJNE KLIKNIĘCIE USUWA)
+                </h3>
+                <button 
+                  type="button" 
+                  className={`btn-history-edit ${editingTxIndex !== null ? 'active' : ''}`}
+                  onClick={() => {
+                    if (editingTxIndex !== null) {
+                      anulujEdycjeTransakcji();
+                    } else if (filtrowaneTransakcje.length > 0) {
+                      const firstIdx = baza.transakcje.indexOf(filtrowaneTransakcje[0]);
+                      edytujTransakcje(firstIdx);
+                    } else {
+                      setIsFormOpen(true);
+                    }
+                  }}
+                  title="Edytuj wpis z historii"
+                >
+                  Edytuj
+                </button>
+              </div>
               <div className="history-list">
                 {filtrowaneTransakcje.length === 0 ? (
                   <div style={{ color: 'var(--text-muted)', padding: '20px' }}>Brak wpisów w tym okresie.</div>
                 ) : (
-                  filtrowaneTransakcje.map((t, index) => (
-                    <div 
-                      key={index} 
-                      className="history-item" 
-                      style={{ color: t.kwota < 0 ? 'var(--fin-red)' : 'var(--fin-green)' }}
-                      onDoubleClick={() => usunTransakcje(baza.transakcje.indexOf(t))}
-                    >
-                      <span>{t.data} | {t.kwota < 0 ? '-' : '+'} {Math.abs(t.kwota).toFixed(2)} zł</span>
-                      <span>{t.opis}</span>
-                    </div>
-                  ))
+                  filtrowaneTransakcje.map((t, index) => {
+                    const globalIdx = baza.transakcje.indexOf(t);
+                    const isEditing = editingTxIndex === globalIdx;
+                    return (
+                      <div 
+                        key={index} 
+                        className={`history-item ${isEditing ? 'editing' : ''}`}
+                        style={{ 
+                          color: t.kwota < 0 ? 'var(--fin-red)' : 'var(--fin-green)',
+                          borderColor: isEditing ? '#00f2ff' : undefined,
+                          backgroundColor: isEditing ? 'rgba(0, 242, 255, 0.08)' : undefined,
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => edytujTransakcje(globalIdx)}
+                        onDoubleClick={() => usunTransakcje(globalIdx)}
+                        title="Kliknij, aby edytować. Podwójne kliknięcie usuwa."
+                      >
+                        <span>{t.data} | {t.kwota < 0 ? '-' : '+'} {Math.abs(t.kwota).toFixed(2)} zł</span>
+                        <span>{t.opis}</span>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>

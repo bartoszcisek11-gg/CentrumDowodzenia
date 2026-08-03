@@ -946,6 +946,28 @@ main {
   border-color: var(--primary);
 }
 
+.btn-history-edit {
+  background-color: transparent;
+  color: #94a3b8;
+  border: 1px solid #1c2b3d;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  line-height: 1.2;
+}
+
+.btn-history-edit:hover,
+.btn-history-edit.active {
+  background-color: rgba(0, 242, 255, 0.15);
+  color: #00f2ff;
+  border-color: #00f2ff;
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.3);
+  transform: translateY(-1px);
+}
+
 .home-item {
   display: flex;
   align-items: center;
@@ -1762,10 +1784,8 @@ main {
    DASHBOARD SECTIONS & RESIZABLE WIDGETS
    ========================================================== */
 .dashboard-sections-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  align-items: stretch;
+  columns: 2 380px;
+  column-gap: 1.5rem;
   width: 100%;
 }
 
@@ -1779,6 +1799,18 @@ main {
   flex-direction: column;
   transition: border-color 0.2s, box-shadow 0.2s;
   min-width: 280px;
+  width: 100%;
+  margin-bottom: 1.5rem;
+  break-inside: avoid;
+  page-break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+}
+
+.dashboard-widget-card.widget-full-width,
+.dashboard-widget-card[data-section-id="tiles"] {
+  column-span: all;
+  -webkit-column-span: all;
+  width: 100% !important;
 }
 
 .dashboard-widget-card.drag-over {
@@ -2246,6 +2278,180 @@ main {
     grid-template-columns: repeat(2, 1fr) !important;
   }
 }
+
+/* --- STYLE DLA WIDGETU RADIO ZET --- */
+.radiozet-widget-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px;
+  gap: 8px;
+}
+
+.radiozet-main-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: radial-gradient(circle at 10% 50%, rgba(255, 0, 85, 0.18) 0%, rgba(13, 19, 31, 0.95) 60%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.radiozet-left-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 170px;
+}
+
+.radiozet-transparent-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  flex-shrink: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  filter: drop-shadow(0 0 8px rgba(229, 0, 102, 0.35));
+}
+
+.radiozet-text-group {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.radiozet-station-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.2;
+}
+
+.radiozet-station-tagline {
+  font-size: 0.8rem;
+  color: #8395a7;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* Play button */
+.radiozet-circle-play-btn {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: #09121d;
+  border: 2px solid #00f2ff;
+  color: #00f2ff;
+  font-size: 1.15rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 0 14px rgba(0, 242, 255, 0.35);
+  outline: none;
+  flex-shrink: 0;
+}
+
+.radiozet-circle-play-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 22px rgba(0, 242, 255, 0.6);
+  background: #00f2ff;
+  color: #09121d;
+}
+
+.radiozet-circle-play-btn.is-playing {
+  background: linear-gradient(135deg, #ff0055 0%, #b3003b 100%);
+  border-color: #ff4d88;
+  color: #ffffff;
+  box-shadow: 0 0 18px rgba(255, 0, 85, 0.5);
+}
+
+.radiozet-play-symbol {
+  margin-left: 3px;
+  line-height: 1;
+}
+
+.radiozet-pause-symbol {
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+/* Select Box */
+.radiozet-right-selector {
+  display: flex;
+  align-items: center;
+  margin-left: auto;
+}
+
+.radiozet-cyan-select {
+  background-color: #0f1826;
+  color: #00f2ff;
+  border: 1px solid #1e2d42;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.radiozet-cyan-select:hover,
+.radiozet-cyan-select:focus {
+  border-color: #00f2ff;
+  box-shadow: 0 0 12px rgba(0, 242, 255, 0.35);
+}
+
+/* Subbar for Volume */
+.radiozet-subbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.radiozet-vol-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(15, 24, 38, 0.5);
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.radiozet-vol-btn {
+  background: transparent;
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.radiozet-vol-slider {
+  accent-color: #00f2ff;
+  height: 4px;
+  width: 80px;
+  background-color: #1e293b;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.radiozet-mini-error {
+  font-size: 0.75rem;
+  color: #f85149;
+}
+
 
 
 
