@@ -4,6 +4,8 @@ import LoginModal from './components/LoginModal';
 import MainDashboard from './components/MainDashboard';
 import ClearDataButton from './components/ClearDataButton';
 import GoogleDriveModal from './components/GoogleDriveModal';
+import { RadioProvider, useRadio } from './components/RadioContext';
+import RadioIcon from './components/RadioIcon';
 
 // Moduły
 import OrtoBazaView from './modules/OrtoBaza/OrtoBazaView';
@@ -14,7 +16,32 @@ import WorkView from './modules/WorkWorksheets/WorkView';
 import { exportDatabase, importDatabase, createBackupPayload } from './utils/storage';
 import { getAccessToken, uploadToDrive } from './utils/googleDriveSync';
 
-export default function App() {
+function HeaderRadioWidget() {
+  const { selectedStation, isPlaying, isLoading, togglePlay } = useRadio();
+
+  return (
+    <button
+      type="button"
+      onClick={togglePlay}
+      className={`header-radio-btn ${isPlaying ? 'is-playing' : ''}`}
+      title={isPlaying ? `Zatrzymaj ${selectedStation.name}` : `Odtwórz ${selectedStation.name}`}
+    >
+      <RadioIcon style={{ width: '18px', height: '18px', flexShrink: 0 }} />
+      <span className="header-radio-text">
+        {selectedStation.name}
+      </span>
+      {isLoading ? (
+        <span className="header-radio-badge loading">⌛</span>
+      ) : isPlaying ? (
+        <span className="header-radio-badge playing">❚❚</span>
+      ) : (
+        <span className="header-radio-badge stopped">▶</span>
+      )}
+    </button>
+  );
+}
+
+function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return sessionStorage.getItem('app_authenticated') === 'true';
   });
@@ -162,8 +189,10 @@ export default function App() {
           {currentAppTitle || 'Centrum Dowodzenia'}
         </h1>
 
-        {/* PRAWA STRONA NAGŁÓWKA (Przycisk Dysk Google oraz Wyloguj) */}
+        {/* PRAWA STRONA NAGŁÓWKA (Przycisk Radio, Dysk Google oraz Wyloguj) */}
         <div className="header-actions-right">
+          <HeaderRadioWidget />
+
           <button 
             onClick={() => setIsDriveModalOpen(true)} 
             className="btn-global-io" 
@@ -203,5 +232,13 @@ export default function App() {
         onDataRestored={() => window.location.reload()}
       />
     </div>
+  );
+}
+
+export default function App() {
+  return (
+    <RadioProvider>
+      <AppContent />
+    </RadioProvider>
   );
 }

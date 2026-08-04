@@ -2452,6 +2452,55 @@ main {
   color: #f85149;
 }
 
+/* Header Radio Button Widget */
+.header-radio-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(18, 28, 45, 0.75);
+  border: 1px solid rgba(0, 242, 255, 0.25);
+  color: #e2e8f0;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-radio-btn:hover {
+  background: rgba(26, 40, 64, 0.9);
+  border-color: #00f2ff;
+  color: #ffffff;
+  box-shadow: 0 0 10px rgba(0, 242, 255, 0.25);
+}
+
+.header-radio-btn.is-playing {
+  border-color: #00f2ff;
+  background: rgba(0, 242, 255, 0.12);
+  color: #00f2ff;
+  box-shadow: 0 0 12px rgba(0, 242, 255, 0.3);
+}
+
+.header-radio-text {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.header-radio-badge {
+  font-size: 0.75rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.header-radio-btn.is-playing .header-radio-badge {
+  background: #00f2ff;
+  color: #09121d;
+  font-weight: 800;
+}
+
+
 
 
 
