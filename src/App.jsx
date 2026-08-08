@@ -23,11 +23,11 @@ function HeaderRadioWidget() {
     <button
       type="button"
       onClick={togglePlay}
-      className={`header-radio-btn ${isPlaying ? 'is-playing' : ''}`}
+      className={`btn-global-io header-radio-btn ${isPlaying ? 'is-playing' : ''}`}
       title={isPlaying ? `Zatrzymaj ${selectedStation.name}` : `Odtwórz ${selectedStation.name}`}
     >
       <RadioIcon style={{ width: '18px', height: '18px', flexShrink: 0 }} />
-      <span className="header-radio-text">
+      <span className="btn-label-text header-radio-text">
         {selectedStation.name}
       </span>
       {isLoading ? (
@@ -199,12 +199,10 @@ function AppContent() {
             title="Konfiguracja i synchronizacja z Google Drive"
           >
             ☁️ <span className="btn-label-text">Dysk Google</span>
-            {isDriveConnected && (
-              <span 
-                className="drive-status-dot" 
-                title="Połączono z Google Drive"
-              />
-            )}
+            <span 
+              className={`drive-status-dot ${isDriveConnected ? 'connected' : 'disconnected'}`} 
+              title={isDriveConnected ? "Połączono z Google Drive" : "Nie połączono z Google Drive"}
+            />
           </button>
 
           {/* Przycisk Wyloguj – podświetlenie na czerwono po najechaniu */}
