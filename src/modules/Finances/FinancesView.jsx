@@ -12,7 +12,7 @@ export default function FinancesView({ onRegisterBack }) {
     return { transakcje: [], stany_konta: [], wydatki_domowe: [], inwestycje: [], portfel: [] };
   });
 
-  const [activeTab, setActiveTab] = useState('stan');
+  const [activeTab, setActiveTab] = useState('przychody');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [aktywnyMiesiac, setAktywnyMiesiac] = useState(null);
 
@@ -71,6 +71,7 @@ export default function FinancesView({ onRegisterBack }) {
   const [selectedPortfelAkcjaId, setSelectedPortfelAkcjaId] = useState('');
   const [inputPortfelUpdateData, setInputPortfelUpdateData] = useState(new Date().toISOString().split('T')[0]);
   const [inputPortfelUpdateWartosc, setInputPortfelUpdateWartosc] = useState('');
+  const [isUpdatePanelOpen, setIsUpdatePanelOpen] = useState(false);
 
   const [expandedHistoryId, setExpandedHistoryId] = useState(null);
 
@@ -353,8 +354,8 @@ export default function FinancesView({ onRegisterBack }) {
     <div id="app-3">
       <div className="app-container">
         <div className="main-tabs">
-          <button className={`tab-btn ${activeTab === 'stan' ? 'active' : ''}`} onClick={() => setActiveTab('stan')}>Stan konta</button>
           <button className={`tab-btn ${activeTab === 'przychody' ? 'active' : ''}`} onClick={() => setActiveTab('przychody')}>Przychody/Wydatki</button>
+          <button className={`tab-btn ${activeTab === 'stan' ? 'active' : ''}`} onClick={() => setActiveTab('stan')}>Stan konta</button>
           <button className={`tab-btn ${activeTab === 'inwestycje' ? 'active' : ''}`} onClick={() => setActiveTab('inwestycje')}>Inwestycje</button>
           <button className={`tab-btn ${activeTab === 'portfel' ? 'active' : ''}`} onClick={() => setActiveTab('portfel')}>Portfel</button>
           <button className={`tab-btn ${activeTab === 'domowe' ? 'active' : ''}`} onClick={() => setActiveTab('domowe')}>Wydatki domowe</button>
@@ -639,47 +640,72 @@ export default function FinancesView({ onRegisterBack }) {
               </div>
 
               {(baza.portfel || []).length > 0 && (
-                <>
-                  <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase', borderTop: '1px solid var(--border)', paddingTop: '15px' }}>
-                    📈 WPROWADŹ DZIENNĄ WARTOŚĆ DANEJ AKCJI
-                  </h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
-                    <select
-                      value={selectedPortfelAkcjaId}
-                      onChange={(e) => setSelectedPortfelAkcjaId(e.target.value)}
-                    >
-                      <option value="">-- Wybierz akcję / spółkę --</option>
-                      {(baza.portfel || []).map(akcja => (
-                        <option key={akcja.id} value={akcja.id}>
-                          {akcja.nazwa} (Kupiono: {akcja.dataZakupu})
-                        </option>
-                      ))}
-                    </select>
-                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: '130px' }}>
-                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Data wpisu:</label>
-                        <input
-                          type="date"
-                          value={inputPortfelUpdateData}
-                          onChange={(e) => setInputPortfelUpdateData(e.target.value)}
-                        />
+                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '15px', marginBottom: '20px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsUpdatePanelOpen(prev => !prev)}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      width: '100%',
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '8px',
+                      padding: '10px 14px',
+                      color: 'var(--text)',
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 'bold',
+                      textTransform: 'uppercase',
+                      transition: 'all 0.2s ease'
+                    }}
+                  >
+                    <span>📈 Wprowadź dzienną wartość pozycji</span>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--primary)' }}>
+                      {isUpdatePanelOpen ? '▲ Zamknij' : '▼ Rozwiń panel'}
+                    </span>
+                  </button>
+
+                  {isUpdatePanelOpen && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                      <select
+                        value={selectedPortfelAkcjaId}
+                        onChange={(e) => setSelectedPortfelAkcjaId(e.target.value)}
+                      >
+                        <option value="">-- Wybierz akcję / spółkę --</option>
+                        {(baza.portfel || []).map(akcja => (
+                          <option key={akcja.id} value={akcja.id}>
+                            {akcja.nazwa} (Kupiono: {akcja.dataZakupu})
+                          </option>
+                        ))}
+                      </select>
+                      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: '130px' }}>
+                          <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Data wpisu:</label>
+                          <input
+                            type="date"
+                            value={inputPortfelUpdateData}
+                            onChange={(e) => setInputPortfelUpdateData(e.target.value)}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: '130px' }}>
+                          <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Wartość w tym dniu (zł):</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={inputPortfelUpdateWartosc}
+                            onChange={(e) => setInputPortfelUpdateWartosc(e.target.value)}
+                          />
+                        </div>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: '130px' }}>
-                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Wartość w tym dniu (zł):</label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={inputPortfelUpdateWartosc}
-                          onChange={(e) => setInputPortfelUpdateWartosc(e.target.value)}
-                        />
-                      </div>
+                      <button className="btn-save" onClick={dodajAktualizacjeWartosci}>
+                        Zapisz zmianę wartości
+                      </button>
                     </div>
-                    <button className="btn-save" onClick={dodajAktualizacjeWartosci}>
-                      Zapisz zmianę wartości
-                    </button>
-                  </div>
-                </>
+                  )}
+                </div>
               )}
 
               {/* Kafelki podsumowania */}
@@ -698,7 +724,7 @@ export default function FinancesView({ onRegisterBack }) {
                 </div>
                 <div className="tile-fin">
                   <div className="tile-title-fin">Wynik Portfela</div>
-                  <div className="tile-value-fin" style={{ color: bilansPortfela >= 0 ? 'var(--fin-green)' : 'var(--fin-red)' }}>
+                  <div className="tile-value-fin" style={{ color: bilansPortfela >= 0 ? '#2ecc71' : 'var(--fin-red)' }}>
                     {bilansPortfela >= 0 ? '+' : ''}{bilansPortfela.toFixed(2)} zł ({pctPortfela >= 0 ? '+' : ''}{pctPortfela.toFixed(2)}%)
                   </div>
                 </div>
@@ -743,10 +769,10 @@ export default function FinancesView({ onRegisterBack }) {
                           </div>
 
                           <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontWeight: 'bold', fontSize: '1rem', color: isProfit ? 'var(--fin-green)' : 'var(--fin-red)' }}>
+                            <div style={{ fontWeight: 'bold', fontSize: '1rem', color: isProfit ? '#2ecc71' : 'var(--fin-red)' }}>
                               {lastVal.toFixed(2)} zł
                             </div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: isProfit ? 'var(--fin-green)' : 'var(--fin-red)' }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: isProfit ? '#2ecc71' : 'var(--fin-red)' }}>
                               {isProfit ? '+' : ''}{diff.toFixed(2)} zł ({isProfit ? '+' : ''}{diffPct.toFixed(2)}%)
                             </div>
                           </div>
@@ -760,6 +786,7 @@ export default function FinancesView({ onRegisterBack }) {
                             onClick={() => {
                               setSelectedPortfelAkcjaId(akcja.id);
                               setInputPortfelUpdateWartosc('');
+                              setIsUpdatePanelOpen(true);
                             }}
                           >
                             📈 Zaktualizuj wartość

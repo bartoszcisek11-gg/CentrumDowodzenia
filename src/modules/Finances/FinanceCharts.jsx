@@ -482,6 +482,9 @@ export function PortfolioPercentageChart({ portfel = [] }) {
     });
 
     const valuesPct = dataPoints.map(dp => dp.pctChange);
+    const minVal = valuesPct.length > 0 ? Math.min(...valuesPct) : 0;
+    const maxVal = valuesPct.length > 0 ? Math.max(...valuesPct) : 0;
+    const diffVal = maxVal - minVal;
 
     // Tworzenie gradientu
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
@@ -492,6 +495,25 @@ export function PortfolioPercentageChart({ portfel = [] }) {
     } else {
       gradient.addColorStop(0, 'rgba(231, 76, 60, 0.35)');
       gradient.addColorStop(1, 'rgba(231, 76, 60, 0.0)');
+    }
+
+    const yScaleConfig = {
+      grace: '15%',
+      ticks: {
+        color: '#8e9aab',
+        callback: (val) => {
+          if (Math.abs(val) < 0.00001) return '0%';
+          const sign = val > 0 ? '+' : '';
+          const numStr = parseFloat(val.toFixed(4)).toString();
+          return sign + numStr + '%';
+        }
+      },
+      grid: { color: 'rgba(255, 255, 255, 0.08)' }
+    };
+
+    if (diffVal < 0.001) {
+      yScaleConfig.suggestedMin = minVal - 1;
+      yScaleConfig.suggestedMax = maxVal + 1;
     }
 
     chartInstance.current = new Chart(ctx, {
@@ -523,14 +545,7 @@ export function PortfolioPercentageChart({ portfel = [] }) {
             ticks: { color: '#f5f6fa', font: { size: 11, weight: '500' } },
             grid: { color: 'rgba(255, 255, 255, 0.08)' }
           },
-          y: {
-            grace: '15%',
-            ticks: {
-              color: '#8e9aab',
-              callback: (val) => (val >= 0 ? '+' : '') + val.toFixed(1) + '%'
-            },
-            grid: { color: 'rgba(255, 255, 255, 0.08)' }
-          }
+          y: yScaleConfig
         },
         plugins: {
           legend: { display: false },
