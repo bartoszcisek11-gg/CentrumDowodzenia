@@ -411,3 +411,165 @@ export function InvestmentChart({ inwestycje = [] }) {
 
   return <canvas ref={canvasRef} />;
 }
+
+export function PortfolioPercentageChart({ portfel = [] }) {
+  const canvasRef = useRef(null);
+  const chartInstance = useRef(null);
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const ctx = canvasRef.current.getContext('2d');
+
+    if (chartInstance.current) chartInstance.current.destroy();
+    if (!portfel || portfel.length === 0) return;
+
+    // Zbierz wszystkie unikalne daty wpisów / zakupu
+    const datesSet = new Set();
+    portfel.forEach(akcja => {
+      if (akcja.dataZakupu) datesSet.add(akcja.dataZakupu);
+      if (Array.isArray(akcja.historia)) {
+        akcja.historia.forEach(h => {
+          if (h.data) datesSet.add(h.data);
+        });
+      }
+    });
+
+    const sortedDates = Array.from(datesSet).sort();
+    if (sortedDates.length === 0) return;
+
+    const dataPoints = [];
+    const labels = [];
+    const pointColors = [];
+
+    sortedDates.forEach(date => {
+      let totalCost = 0;
+      let totalValue = 0;
+
+      portfel.forEach(akcja => {
+        // Czy akcja została kupiona przed lub w dniu 'date'
+        if (akcja.dataZakupu && akcja.dataZakupu <= date) {
+          const cost = parseFloat(akcja.wartoscZakupu) || 0;
+          totalCost += cost;
+
+          // Znajdź najnowszą wartość z dnia <= date
+          let latestVal = cost;
+          let latestDate = akcja.dataZakupu;
+
+          if (Array.isArray(akcja.historia)) {
+            akcja.historia.forEach(h => {
+              if (h.data && h.data <= date && h.data >= latestDate) {
+                latestDate = h.data;
+                latestVal = parseFloat(h.wartosc) || 0;
+              }
+            });
+          }
+          totalValue += latestVal;
+        }
+      });
+
+      const profitLoss = totalValue - totalCost;
+      const pctChange = totalCost > 0 ? (profitLoss / totalCost) * 100 : 0;
+
+      labels.push(date);
+      dataPoints.push({
+        date,
+        pctChange,
+        totalCost,
+        totalValue,
+        profitLoss
+      });
+      pointColors.push(pctChange >= 0 ? '#2ecc71' : '#e74c3c');
+    });
+
+    const valuesPct = dataPoints.map(dp => dp.pctChange);
+
+    // Tworzenie gradientu
+    const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+    const lastPct = valuesPct[valuesPct.length - 1] || 0;
+    if (lastPct >= 0) {
+      gradient.addColorStop(0, 'rgba(46, 204, 113, 0.35)');
+      gradient.addColorStop(1, 'rgba(46, 204, 113, 0.0)');
+    } else {
+      gradient.addColorStop(0, 'rgba(231, 76, 60, 0.35)');
+      gradient.addColorStop(1, 'rgba(231, 76, 60, 0.0)');
+    }
+
+    chartInstance.current = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Zmiana portfela (%)',
+            data: valuesPct,
+            borderColor: lastPct >= 0 ? '#2ecc71' : '#e74c3c',
+            backgroundColor: gradient,
+            borderWidth: 3,
+            fill: true,
+            tension: 0.3,
+            pointBackgroundColor: pointColors,
+            pointBorderColor: '#181c24',
+            pointBorderWidth: 2,
+            pointRadius: 5,
+            pointHoverRadius: 8
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            ticks: { color: '#f5f6fa', font: { size: 11, weight: '500' } },
+            grid: { color: 'rgba(255, 255, 255, 0.08)' }
+          },
+          y: {
+            grace: '15%',
+            ticks: {
+              color: '#8e9aab',
+              callback: (val) => (val >= 0 ? '+' : '') + val.toFixed(1) + '%'
+            },
+            grid: { color: 'rgba(255, 255, 255, 0.08)' }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#181c24',
+            titleColor: '#f5f6fa',
+            borderColor: '#00f2ff',
+            borderWidth: 1,
+            padding: 12,
+            callbacks: {
+              title: (tooltipItems) => {
+                const idx = tooltipItems[0].dataIndex;
+                return `📅 Data: ${labels[idx]}`;
+              },
+              label: (context) => {
+                const idx = context.dataIndex;
+                const dp = dataPoints[idx];
+                const pctFormatted = (dp.pctChange >= 0 ? '+' : '') + dp.pctChange.toFixed(2) + '%';
+                const plFormatted = (dp.profitLoss >= 0 ? '+' : '') + dp.profitLoss.toFixed(2) + ' zł';
+                const valFormatted = dp.totalValue.toFixed(2) + ' zł';
+                const costFormatted = dp.totalCost.toFixed(2) + ' zł';
+
+                return [
+                  ` 📈 Zmiana: ${pctFormatted}`,
+                  ` 💰 Wynik kwotowy: ${plFormatted}`,
+                  ` 💼 Wartość portfela: ${valFormatted}`,
+                  ` 💵 Całkowity wkład: ${costFormatted}`
+                ];
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return () => {
+      if (chartInstance.current) chartInstance.current.destroy();
+    };
+  }, [portfel]);
+
+  return <canvas ref={canvasRef} />;
+}

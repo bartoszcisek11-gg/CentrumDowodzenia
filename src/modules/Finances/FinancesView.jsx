@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { PieChart, LineChart, InvestmentChart } from './FinanceCharts';
+import { PieChart, LineChart, InvestmentChart, PortfolioPercentageChart } from './FinanceCharts';
 
 export default function FinancesView({ onRegisterBack }) {
   const [baza, setBaza] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('finanse_baza_v4'));
-      if (saved) return saved;
+      if (saved) return { transakcje: [], stany_konta: [], wydatki_domowe: [], inwestycje: [], portfel: [], ...saved };
     } catch (e) {
       console.error('Błąd odczytu finanse_baza_v4:', e);
     }
-    return { transakcje: [], stany_konta: [], wydatki_domowe: [], inwestycje: [] };
+    return { transakcje: [], stany_konta: [], wydatki_domowe: [], inwestycje: [], portfel: [] };
   });
 
-  const [activeTab, setActiveTab] = useState('przychody');
+  const [activeTab, setActiveTab] = useState('stan');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [aktywnyMiesiac, setAktywnyMiesiac] = useState(null);
 
@@ -62,6 +62,17 @@ export default function FinancesView({ onRegisterBack }) {
   const [inputInvMiesiac, setInputInvMiesiac] = useState(new Date().toISOString().substring(0, 7));
   const [inputInvKwota, setInputInvKwota] = useState('');
   const [inputInvTyp, setInputInvTyp] = useState('Profit');
+
+  // Stany dla sekcji Portfel
+  const [inputPortfelNazwa, setInputPortfelNazwa] = useState('');
+  const [inputPortfelDataZakupu, setInputPortfelDataZakupu] = useState(new Date().toISOString().split('T')[0]);
+  const [inputPortfelWartoscZakupu, setInputPortfelWartoscZakupu] = useState('');
+
+  const [selectedPortfelAkcjaId, setSelectedPortfelAkcjaId] = useState('');
+  const [inputPortfelUpdateData, setInputPortfelUpdateData] = useState(new Date().toISOString().split('T')[0]);
+  const [inputPortfelUpdateWartosc, setInputPortfelUpdateWartosc] = useState('');
+
+  const [expandedHistoryId, setExpandedHistoryId] = useState(null);
 
   useEffect(() => {
     localStorage.setItem('finanse_baza_v4', JSON.stringify(baza));
@@ -211,6 +222,81 @@ export default function FinancesView({ onRegisterBack }) {
     }
   };
 
+  const dodajAkcjeDoPortfela = () => {
+    const wartosc = parseFloat(inputPortfelWartoscZakupu);
+    if (!inputPortfelNazwa.trim() || !inputPortfelDataZakupu || isNaN(wartosc) || wartosc <= 0) {
+      alert('Wprowadź poprawną nazwę, datę zakupu oraz wartość w dniu zakupu!');
+      return;
+    }
+    const nowaAkcja = {
+      id: Date.now().toString(),
+      nazwa: inputPortfelNazwa.trim(),
+      dataZakupu: inputPortfelDataZakupu,
+      wartoscZakupu: wartosc,
+      historia: []
+    };
+
+    setBaza(prev => ({
+      ...prev,
+      portfel: [...(prev.portfel || []), nowaAkcja]
+    }));
+
+    setInputPortfelNazwa('');
+    setInputPortfelWartoscZakupu('');
+  };
+
+  const usunAkcjeZPortfela = (id) => {
+    if (window.confirm('Czy na pewno chcesz usunąć tę akcję z portfela?')) {
+      setBaza(prev => ({
+        ...prev,
+        portfel: (prev.portfel || []).filter(a => a.id !== id)
+      }));
+      if (selectedPortfelAkcjaId === id) setSelectedPortfelAkcjaId('');
+    }
+  };
+
+  const dodajAktualizacjeWartosci = () => {
+    const wartosc = parseFloat(inputPortfelUpdateWartosc);
+    if (!selectedPortfelAkcjaId || !inputPortfelUpdateData || isNaN(wartosc) || wartosc < 0) {
+      alert('Wybierz akcję, wprowadź poprawną datę i nową wartość!');
+      return;
+    }
+
+    setBaza(prev => {
+      const list = (prev.portfel || []).map(akcja => {
+        if (akcja.id === selectedPortfelAkcjaId) {
+          const nowaHistoria = [
+            ...(akcja.historia || []),
+            { id: Date.now().toString(), data: inputPortfelUpdateData, wartosc }
+          ];
+          nowaHistoria.sort((a, b) => a.data.localeCompare(b.data));
+          return { ...akcja, historia: nowaHistoria };
+        }
+        return akcja;
+      });
+      return { ...prev, portfel: list };
+    });
+
+    setInputPortfelUpdateWartosc('');
+  };
+
+  const usunWpisHistorii = (akcjaId, wpisId) => {
+    if (window.confirm('Czy usunąć ten wpis wyceny z historii?')) {
+      setBaza(prev => {
+        const list = (prev.portfel || []).map(akcja => {
+          if (akcja.id === akcjaId) {
+            return {
+              ...akcja,
+              historia: (akcja.historia || []).filter(h => h.id !== wpisId)
+            };
+          }
+          return akcja;
+        });
+        return { ...prev, portfel: list };
+      });
+    }
+  };
+
   const miesiaceSet = new Set(baza.transakcje.map(t => t.data.substring(0, 7)));
   const miesiace = Array.from(miesiaceSet).sort().reverse();
   const effMiesiac = (!aktywnyMiesiac || !miesiace.includes(aktywnyMiesiac)) ? miesiace[0] : aktywnyMiesiac;
@@ -244,13 +330,33 @@ export default function FinancesView({ onRegisterBack }) {
   });
   const bilansInv = sumaInvProfit - sumaInvStrata;
 
+  // Wyliczenia dla Portfela
+  let sumaWkladPortfela = 0;
+  let sumaAktualnaPortfela = 0;
+
+  (baza.portfel || []).forEach(akcja => {
+    const wklad = parseFloat(akcja.wartoscZakupu) || 0;
+    sumaWkladPortfela += wklad;
+
+    let aktVal = wklad;
+    if (Array.isArray(akcja.historia) && akcja.historia.length > 0) {
+      const sorted = [...akcja.historia].sort((a, b) => a.data.localeCompare(b.data));
+      aktVal = parseFloat(sorted[sorted.length - 1].wartosc) || 0;
+    }
+    sumaAktualnaPortfela += aktVal;
+  });
+
+  const bilansPortfela = sumaAktualnaPortfela - sumaWkladPortfela;
+  const pctPortfela = sumaWkladPortfela > 0 ? (bilansPortfela / sumaWkladPortfela) * 100 : 0;
+
   return (
     <div id="app-3">
       <div className="app-container">
         <div className="main-tabs">
+          <button className={`tab-btn ${activeTab === 'stan' ? 'active' : ''}`} onClick={() => setActiveTab('stan')}>Stan konta</button>
           <button className={`tab-btn ${activeTab === 'przychody' ? 'active' : ''}`} onClick={() => setActiveTab('przychody')}>Przychody/Wydatki</button>
           <button className={`tab-btn ${activeTab === 'inwestycje' ? 'active' : ''}`} onClick={() => setActiveTab('inwestycje')}>Inwestycje</button>
-          <button className={`tab-btn ${activeTab === 'stan' ? 'active' : ''}`} onClick={() => setActiveTab('stan')}>Stan konta</button>
+          <button className={`tab-btn ${activeTab === 'portfel' ? 'active' : ''}`} onClick={() => setActiveTab('portfel')}>Portfel</button>
           <button className={`tab-btn ${activeTab === 'domowe' ? 'active' : ''}`} onClick={() => setActiveTab('domowe')}>Wydatki domowe</button>
         </div>
 
@@ -489,6 +595,247 @@ export default function FinancesView({ onRegisterBack }) {
                 ) : (
                   <InvestmentChart inwestycje={baza.inwestycje || []} />
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className={`tab-content ${activeTab === 'portfel' ? 'active' : ''}`}>
+          <div className="grid-2col">
+            <div className="card">
+              <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase' }}>
+                ➕ DODAJ AKCJĘ / AKTYWO DO PORTFELA
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                <input
+                  type="text"
+                  placeholder="Nazwa / Symbol (np. Apple, PKO BP, Orlen)"
+                  value={inputPortfelNazwa}
+                  onChange={(e) => setInputPortfelNazwa(e.target.value)}
+                />
+                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: '130px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Data zakupu:</label>
+                    <input
+                      type="date"
+                      value={inputPortfelDataZakupu}
+                      onChange={(e) => setInputPortfelDataZakupu(e.target.value)}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: '130px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Wartość zakupu (zł):</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={inputPortfelWartoscZakupu}
+                      onChange={(e) => setInputPortfelWartoscZakupu(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <button className="btn-save" onClick={dodajAkcjeDoPortfela}>
+                  ➕ Dodaj do portfela
+                </button>
+              </div>
+
+              {(baza.portfel || []).length > 0 && (
+                <>
+                  <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase', borderTop: '1px solid var(--border)', paddingTop: '15px' }}>
+                    📈 WPROWADŹ DZIENNĄ WARTOŚĆ DANEJ AKCJI
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+                    <select
+                      value={selectedPortfelAkcjaId}
+                      onChange={(e) => setSelectedPortfelAkcjaId(e.target.value)}
+                    >
+                      <option value="">-- Wybierz akcję / spółkę --</option>
+                      {(baza.portfel || []).map(akcja => (
+                        <option key={akcja.id} value={akcja.id}>
+                          {akcja.nazwa} (Kupiono: {akcja.dataZakupu})
+                        </option>
+                      ))}
+                    </select>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: '130px' }}>
+                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Data wpisu:</label>
+                        <input
+                          type="date"
+                          value={inputPortfelUpdateData}
+                          onChange={(e) => setInputPortfelUpdateData(e.target.value)}
+                        />
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: '130px' }}>
+                        <label style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Wartość w tym dniu (zł):</label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={inputPortfelUpdateWartosc}
+                          onChange={(e) => setInputPortfelUpdateWartosc(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <button className="btn-save" onClick={dodajAktualizacjeWartosci}>
+                      Zapisz zmianę wartości
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* Kafelki podsumowania */}
+              <div className="tiles-container" style={{ marginBottom: '20px' }}>
+                <div className="tile-fin">
+                  <div className="tile-title-fin">Wkład (Koszt)</div>
+                  <div className="tile-value-fin" style={{ color: 'var(--primary)' }}>
+                    {sumaWkladPortfela.toFixed(2)} zł
+                  </div>
+                </div>
+                <div className="tile-fin">
+                  <div className="tile-title-fin">Wartość Obecna</div>
+                  <div className="tile-value-fin" style={{ color: '#ffffff' }}>
+                    {sumaAktualnaPortfela.toFixed(2)} zł
+                  </div>
+                </div>
+                <div className="tile-fin">
+                  <div className="tile-title-fin">Wynik Portfela</div>
+                  <div className="tile-value-fin" style={{ color: bilansPortfela >= 0 ? 'var(--fin-green)' : 'var(--fin-red)' }}>
+                    {bilansPortfela >= 0 ? '+' : ''}{bilansPortfela.toFixed(2)} zł ({pctPortfela >= 0 ? '+' : ''}{pctPortfela.toFixed(2)}%)
+                  </div>
+                </div>
+              </div>
+
+              <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textTransform: 'uppercase' }}>
+                POSIADANE AKCJE W PORTFELU
+              </h3>
+              <div className="history-list">
+                {(baza.portfel || []).length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', padding: '20px', textAlign: 'center' }}>
+                    Brak akcji w portfelu. Dodaj pierwsze akcje powyżej!
+                  </div>
+                ) : (
+                  (baza.portfel || []).map(akcja => {
+                    const wklad = parseFloat(akcja.wartoscZakupu) || 0;
+                    const historia = Array.isArray(akcja.historia) ? akcja.historia : [];
+                    const sortedHist = [...historia].sort((a, b) => a.data.localeCompare(b.data));
+                    const lastVal = sortedHist.length > 0 ? parseFloat(sortedHist[sortedHist.length - 1].wartosc) : wklad;
+                    const diff = lastVal - wklad;
+                    const diffPct = wklad > 0 ? (diff / wklad) * 100 : 0;
+                    const isProfit = diff >= 0;
+                    const isExpanded = expandedHistoryId === akcja.id;
+
+                    return (
+                      <div
+                        key={akcja.id}
+                        style={{
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '8px',
+                          padding: '12px',
+                          marginBottom: '10px'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <div>
+                            <div style={{ fontWeight: 'bold', fontSize: '1rem', color: '#ffffff' }}>{akcja.nazwa}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              Kupiono: {akcja.dataZakupu} | Wartość zakupu: {wklad.toFixed(2)} zł
+                            </div>
+                          </div>
+
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontWeight: 'bold', fontSize: '1rem', color: isProfit ? 'var(--fin-green)' : 'var(--fin-red)' }}>
+                              {lastVal.toFixed(2)} zł
+                            </div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: isProfit ? 'var(--fin-green)' : 'var(--fin-red)' }}>
+                              {isProfit ? '+' : ''}{diff.toFixed(2)} zł ({isProfit ? '+' : ''}{diffPct.toFixed(2)}%)
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '10px', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            className="btn-save"
+                            style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: '#1e293b' }}
+                            onClick={() => {
+                              setSelectedPortfelAkcjaId(akcja.id);
+                              setInputPortfelUpdateWartosc('');
+                            }}
+                          >
+                            📈 Zaktualizuj wartość
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn-save"
+                            style={{ padding: '4px 8px', fontSize: '0.75rem', backgroundColor: 'transparent', border: '1px solid var(--border)' }}
+                            onClick={() => setExpandedHistoryId(isExpanded ? null : akcja.id)}
+                          >
+                            📜 Historia wpisów ({sortedHist.length + 1}) {isExpanded ? '▲' : '▼'}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn-delete-action"
+                            onClick={() => usunAkcjeZPortfela(akcja.id)}
+                          >
+                            🗑️ Usuń akcję
+                          </button>
+                        </div>
+
+                        {/* Rozwijana historia wpisów */}
+                        {isExpanded && (
+                          <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed var(--border)', fontSize: '0.8rem' }}>
+                            <div style={{ fontWeight: 'bold', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                              Historia wartości dla {akcja.nazwa}:
+                            </div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                              <span>📅 {akcja.dataZakupu} (Zakup)</span>
+                              <span style={{ fontWeight: 'bold' }}>{wklad.toFixed(2)} zł</span>
+                            </div>
+                            {sortedHist.map(item => (
+                              <div
+                                key={item.id}
+                                style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+                              >
+                                <span>📅 {item.data}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <span style={{ fontWeight: 'bold' }}>{parseFloat(item.wartosc).toFixed(2)} zł</span>
+                                  <button
+                                    type="button"
+                                    className="btn-delete-history-item"
+                                    onClick={() => usunWpisHistorii(akcja.id, item.id)}
+                                    title="Usuń ten wpis"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            <div className="card">
+              <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textAlign: 'center', textTransform: 'uppercase' }}>
+                WYKRES ZMIAN PROCENTOWYCH CAŁEGO PORTFELA
+              </h3>
+              <div style={{ height: '360px', position: 'relative' }}>
+                {(baza.portfel || []).length === 0 ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>
+                    Dodaj pierwsze akcje i ich wyceny, aby wyświetlić wykres zmian procentowych portfela.
+                  </div>
+                ) : (
+                  <PortfolioPercentageChart portfel={baza.portfel || []} />
+                )}
+              </div>
+              <div style={{ marginTop: '15px', fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: '1.4' }}>
+                💡 Wykres przedstawia łączną zmianę procentową całego portfela w stosunku do ponoszonego wkładu finansowego na przestrzeni wprowadzonych dat.
               </div>
             </div>
           </div>

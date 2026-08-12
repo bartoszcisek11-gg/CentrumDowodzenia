@@ -2512,6 +2512,46 @@ main {
   font-weight: 800;
 }
 
+/* Przycisk usuwania w portfelu */
+.btn-delete-action {
+  padding: 4px 10px;
+  font-size: 0.75rem;
+  background-color: rgba(231, 76, 60, 0.15);
+  color: #f85149;
+  border: 1px solid rgba(231, 76, 60, 0.35);
+  border-radius: 6px;
+  cursor: pointer;
+  margin-left: auto;
+  transition: all 0.2s ease;
+  font-weight: 500;
+}
+
+.btn-delete-action:hover {
+  background-color: rgba(231, 76, 60, 0.85);
+  color: #ffffff;
+  border-color: #f85149;
+  box-shadow: 0 0 10px rgba(248, 81, 73, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-delete-history-item {
+  background: none;
+  border: none;
+  color: #f85149;
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 2px 5px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.btn-delete-history-item:hover {
+  background-color: rgba(248, 81, 73, 0.25);
+  color: #ffffff;
+}
+
+
 
 
 
