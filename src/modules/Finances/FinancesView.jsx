@@ -73,6 +73,7 @@ export default function FinancesView({ onRegisterBack }) {
   const [inputPortfelUpdateWartosc, setInputPortfelUpdateWartosc] = useState('');
   const [isUpdatePanelOpen, setIsUpdatePanelOpen] = useState(false);
 
+  const [chartSelectedStockId, setChartSelectedStockId] = useState('all');
   const [expandedHistoryId, setExpandedHistoryId] = useState(null);
 
   useEffect(() => {
@@ -253,6 +254,7 @@ export default function FinancesView({ onRegisterBack }) {
         portfel: (prev.portfel || []).filter(a => a.id !== id)
       }));
       if (selectedPortfelAkcjaId === id) setSelectedPortfelAkcjaId('');
+      if (chartSelectedStockId === id) setChartSelectedStockId('all');
     }
   };
 
@@ -849,21 +851,100 @@ export default function FinancesView({ onRegisterBack }) {
             </div>
 
             <div className="card">
-              <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textAlign: 'center', textTransform: 'uppercase' }}>
-                WYKRES ZMIAN PROCENTOWYCH CAŁEGO PORTFELA
-              </h3>
-              <div style={{ height: '360px', position: 'relative' }}>
-                {(baza.portfel || []).length === 0 ? (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>
-                    Dodaj pierwsze akcje i ich wyceny, aby wyświetlić wykres zmian procentowych portfela.
-                  </div>
-                ) : (
-                  <PortfolioPercentageChart portfel={baza.portfel || []} />
-                )}
-              </div>
-              <div style={{ marginTop: '15px', fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', lineHeight: '1.4' }}>
-                💡 Wykres przedstawia łączną zmianę procentową całego portfela w stosunku do ponoszonego wkładu finansowego na przestrzeni wprowadzonych dat.
-              </div>
+              {(() => {
+                const selectedStockForChart = chartSelectedStockId !== 'all'
+                  ? (baza.portfel || []).find(s => s.id === chartSelectedStockId)
+                  : null;
+
+                return (
+                  <>
+                    <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textAlign: 'center', textTransform: 'uppercase' }}>
+                      {chartSelectedStockId === 'all' || !selectedStockForChart
+                        ? 'WYKRES ZMIAN PROCENTOWYCH CAŁEGO PORTFELA'
+                        : `WYKRES ZMIAN PROCENTOWYCH: ${selectedStockForChart.nazwa.toUpperCase()}`}
+                    </h3>
+                    <div style={{ height: '340px', position: 'relative' }}>
+                      {(baza.portfel || []).length === 0 ? (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-muted)', textAlign: 'center', padding: '20px' }}>
+                          Dodaj pierwsze akcje i ich wyceny, aby wyświetlić wykres zmian procentowych portfela.
+                        </div>
+                      ) : (
+                        <PortfolioPercentageChart portfel={baza.portfel || []} selectedStockId={chartSelectedStockId} />
+                      )}
+                    </div>
+
+                    {(baza.portfel || []).length > 0 && (
+                      <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border)' }}>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '8px', fontWeight: '600' }}>
+                          Pokaż na wykresie:
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <button
+                            type="button"
+                            onClick={() => setChartSelectedStockId('all')}
+                            style={{
+                              padding: '6px 14px',
+                              fontSize: '12px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              border: chartSelectedStockId === 'all' ? '1px solid var(--primary)' : '1px solid var(--border)',
+                              background: chartSelectedStockId === 'all' ? 'var(--primary)' : 'rgba(255,255,255,0.05)',
+                              color: chartSelectedStockId === 'all' ? '#000000' : 'var(--text)',
+                              fontWeight: chartSelectedStockId === 'all' ? 'bold' : 'normal',
+                              transition: 'all 0.2s ease',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '6px'
+                            }}
+                          >
+                            <span>💼 Cały portfel</span>
+                            <span style={{ fontSize: '11px', fontWeight: 'bold', color: chartSelectedStockId === 'all' ? '#000000' : (pctPortfela >= 0 ? '#2ecc71' : 'var(--fin-red)') }}>
+                              ({pctPortfela >= 0 ? '+' : ''}{pctPortfela.toFixed(2)}%)
+                            </span>
+                          </button>
+
+                          {(baza.portfel || []).map(akcja => {
+                            const wklad = parseFloat(akcja.wartoscZakupu) || 0;
+                            const historia = Array.isArray(akcja.historia) ? akcja.historia : [];
+                            const sortedHist = [...historia].sort((a, b) => a.data.localeCompare(b.data));
+                            const lastVal = sortedHist.length > 0 ? parseFloat(sortedHist[sortedHist.length - 1].wartosc) : wklad;
+                            const diff = lastVal - wklad;
+                            const diffPct = wklad > 0 ? (diff / wklad) * 100 : 0;
+                            const isSelected = chartSelectedStockId === akcja.id;
+
+                            return (
+                              <button
+                                key={akcja.id}
+                                type="button"
+                                onClick={() => setChartSelectedStockId(akcja.id)}
+                                style={{
+                                  padding: '6px 14px',
+                                  fontSize: '12px',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  border: isSelected ? '1px solid var(--primary)' : '1px solid var(--border)',
+                                  background: isSelected ? 'rgba(0, 242, 255, 0.15)' : 'rgba(255,255,255,0.05)',
+                                  color: isSelected ? '#00f2ff' : 'var(--text)',
+                                  fontWeight: isSelected ? 'bold' : 'normal',
+                                  transition: 'all 0.2s ease',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px'
+                                }}
+                              >
+                                <span>{akcja.nazwa}</span>
+                                <span style={{ fontSize: '11px', fontWeight: 'bold', color: diffPct >= 0 ? '#2ecc71' : 'var(--fin-red)' }}>
+                                  ({diffPct >= 0 ? '+' : ''}{diffPct.toFixed(2)}%)
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>

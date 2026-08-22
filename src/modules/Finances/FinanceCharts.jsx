@@ -412,7 +412,7 @@ export function InvestmentChart({ inwestycje = [] }) {
   return <canvas ref={canvasRef} />;
 }
 
-export function PortfolioPercentageChart({ portfel = [] }) {
+export function PortfolioPercentageChart({ portfel = [], selectedStockId = 'all' }) {
   const canvasRef = useRef(null);
   const chartInstance = useRef(null);
 
@@ -423,16 +423,29 @@ export function PortfolioPercentageChart({ portfel = [] }) {
     if (chartInstance.current) chartInstance.current.destroy();
     if (!portfel || portfel.length === 0) return;
 
+    const singleStock = selectedStockId !== 'all' ? portfel.find(s => s.id === selectedStockId) : null;
+    const isSingle = !!singleStock;
+
     // Zbierz wszystkie unikalne daty wpisów / zakupu
     const datesSet = new Set();
-    portfel.forEach(akcja => {
-      if (akcja.dataZakupu) datesSet.add(akcja.dataZakupu);
-      if (Array.isArray(akcja.historia)) {
-        akcja.historia.forEach(h => {
+
+    if (isSingle) {
+      if (singleStock.dataZakupu) datesSet.add(singleStock.dataZakupu);
+      if (Array.isArray(singleStock.historia)) {
+        singleStock.historia.forEach(h => {
           if (h.data) datesSet.add(h.data);
         });
       }
-    });
+    } else {
+      portfel.forEach(akcja => {
+        if (akcja.dataZakupu) datesSet.add(akcja.dataZakupu);
+        if (Array.isArray(akcja.historia)) {
+          akcja.historia.forEach(h => {
+            if (h.data) datesSet.add(h.data);
+          });
+        }
+      });
+    }
 
     const sortedDates = Array.from(datesSet).sort();
     if (sortedDates.length === 0) return;
@@ -445,27 +458,44 @@ export function PortfolioPercentageChart({ portfel = [] }) {
       let totalCost = 0;
       let totalValue = 0;
 
-      portfel.forEach(akcja => {
-        // Czy akcja została kupiona przed lub w dniu 'date'
-        if (akcja.dataZakupu && akcja.dataZakupu <= date) {
-          const cost = parseFloat(akcja.wartoscZakupu) || 0;
-          totalCost += cost;
+      if (isSingle) {
+        const cost = parseFloat(singleStock.wartoscZakupu) || 0;
+        totalCost = cost;
+        let latestVal = cost;
+        let latestDate = singleStock.dataZakupu;
 
-          // Znajdź najnowszą wartość z dnia <= date
-          let latestVal = cost;
-          let latestDate = akcja.dataZakupu;
-
-          if (Array.isArray(akcja.historia)) {
-            akcja.historia.forEach(h => {
-              if (h.data && h.data <= date && h.data >= latestDate) {
-                latestDate = h.data;
-                latestVal = parseFloat(h.wartosc) || 0;
-              }
-            });
-          }
-          totalValue += latestVal;
+        if (Array.isArray(singleStock.historia)) {
+          singleStock.historia.forEach(h => {
+            if (h.data && h.data <= date && h.data >= latestDate) {
+              latestDate = h.data;
+              latestVal = parseFloat(h.wartosc) || 0;
+            }
+          });
         }
-      });
+        totalValue = latestVal;
+      } else {
+        portfel.forEach(akcja => {
+          // Czy akcja została kupiona przed lub w dniu 'date'
+          if (akcja.dataZakupu && akcja.dataZakupu <= date) {
+            const cost = parseFloat(akcja.wartoscZakupu) || 0;
+            totalCost += cost;
+
+            // Znajdź najnowszą wartość z dnia <= date
+            let latestVal = cost;
+            let latestDate = akcja.dataZakupu;
+
+            if (Array.isArray(akcja.historia)) {
+              akcja.historia.forEach(h => {
+                if (h.data && h.data <= date && h.data >= latestDate) {
+                  latestDate = h.data;
+                  latestVal = parseFloat(h.wartosc) || 0;
+                }
+              });
+            }
+            totalValue += latestVal;
+          }
+        });
+      }
 
       const profitLoss = totalValue - totalCost;
       const pctChange = totalCost > 0 ? (profitLoss / totalCost) * 100 : 0;
@@ -476,7 +506,8 @@ export function PortfolioPercentageChart({ portfel = [] }) {
         pctChange,
         totalCost,
         totalValue,
-        profitLoss
+        profitLoss,
+        name: isSingle ? singleStock.nazwa : 'Cały portfel'
       });
       pointColors.push(pctChange >= 0 ? '#2ecc71' : '#e74c3c');
     });
@@ -516,13 +547,15 @@ export function PortfolioPercentageChart({ portfel = [] }) {
       yScaleConfig.suggestedMax = maxVal + 1;
     }
 
+    const chartTitle = isSingle ? `Zmiana ${singleStock.nazwa} (%)` : 'Zmiana portfela (%)';
+
     chartInstance.current = new Chart(ctx, {
       type: 'line',
       data: {
         labels,
         datasets: [
           {
-            label: 'Zmiana portfela (%)',
+            label: chartTitle,
             data: valuesPct,
             borderColor: lastPct >= 0 ? '#2ecc71' : '#e74c3c',
             backgroundColor: gradient,
@@ -568,8 +601,17 @@ export function PortfolioPercentageChart({ portfel = [] }) {
                 const valFormatted = dp.totalValue.toFixed(2) + ' zł';
                 const costFormatted = dp.totalCost.toFixed(2) + ' zł';
 
+                if (isSingle) {
+                  return [
+                    ` 📈 Zmiana pozycji: ${pctFormatted}`,
+                    ` 💰 Wynik kwotowy: ${plFormatted}`,
+                    ` 💼 Aktualna wycena: ${valFormatted}`,
+                    ` 💵 Koszt zakupu: ${costFormatted}`
+                  ];
+                }
+
                 return [
-                  ` 📈 Zmiana: ${pctFormatted}`,
+                  ` 📈 Zmiana portfela: ${pctFormatted}`,
                   ` 💰 Wynik kwotowy: ${plFormatted}`,
                   ` 💼 Wartość portfela: ${valFormatted}`,
                   ` 💵 Całkowity wkład: ${costFormatted}`
@@ -584,7 +626,7 @@ export function PortfolioPercentageChart({ portfel = [] }) {
     return () => {
       if (chartInstance.current) chartInstance.current.destroy();
     };
-  }, [portfel]);
+  }, [portfel, selectedStockId]);
 
   return <canvas ref={canvasRef} />;
 }
