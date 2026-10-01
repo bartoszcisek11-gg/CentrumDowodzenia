@@ -1,6 +1,34 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, LineChart, InvestmentChart, PortfolioPercentageChart } from './FinanceCharts';
 
+function HighlightMatch({ text, query }) {
+  if (!query || !text) return <>{text}</>;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const parts = text.split(new RegExp(`(${escaped})`, 'gi'));
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.toLowerCase() === query.toLowerCase() ? (
+          <span
+            key={i}
+            style={{
+              backgroundColor: 'rgba(0, 242, 255, 0.25)',
+              color: '#00f2ff',
+              borderRadius: '2px',
+              padding: '0 2px',
+              fontWeight: 'bold'
+            }}
+          >
+            {part}
+          </span>
+        ) : (
+          <span key={i}>{part}</span>
+        )
+      )}
+    </>
+  );
+}
+
 export default function FinancesView({ onRegisterBack }) {
   const [baza, setBaza] = useState(() => {
     try {
@@ -35,6 +63,11 @@ export default function FinancesView({ onRegisterBack }) {
   const [inputTyp, setInputTyp] = useState('Przychód');
   const [editingTxIndex, setEditingTxIndex] = useState(null);
 
+  // Stany wyszukiwarki w zakładce Przychody/Wydatki
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchScope, setSearchScope] = useState('all'); // 'all' (cała historia) | 'current' (ten miesiąc)
+  const [searchTypeFilter, setSearchTypeFilter] = useState('all'); // 'all' | 'wydatek' | 'przychod'
+
   const [inputStanData, setInputStanData] = useState(new Date().toISOString().slice(0, 7));
   const [inputStanKwota, setInputStanKwota] = useState('');
 
@@ -53,6 +86,18 @@ export default function FinancesView({ onRegisterBack }) {
       }
     }
     return dataStr;
+  };
+
+  const formatujDateDDMMYYYY = (dateStr) => {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        return `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      return dateStr;
+    }
+    return dateStr;
   };
 
   const [inputDomNazwa, setInputDomNazwa] = useState('');
@@ -300,18 +345,41 @@ export default function FinancesView({ onRegisterBack }) {
     }
   };
 
+  const isSearching = searchQuery.trim().length > 0;
+  const queryLower = searchQuery.trim().toLowerCase();
+
   const miesiaceSet = new Set(baza.transakcje.map(t => t.data.substring(0, 7)));
   const miesiace = Array.from(miesiaceSet).sort().reverse();
   const effMiesiac = (!aktywnyMiesiac || !miesiace.includes(aktywnyMiesiac)) ? miesiace[0] : aktywnyMiesiac;
 
-  let sumaP = 0, sumaW = 0;
-  const filtrowaneTransakcje = baza.transakcje.filter((t) => {
-    if (t.data.startsWith(effMiesiac)) {
-      const kwotaAbs = Math.abs(t.kwota);
-      if (t.kwota > 0) sumaP += t.kwota; else sumaW += kwotaAbs;
+  const wyswietlaneTransakcje = baza.transakcje.filter((t) => {
+    if (isSearching) {
+      const matchesSearch = (t.opis || '').toLowerCase().includes(queryLower) ||
+                            formatujDateDDMMYYYY(t.data).includes(queryLower) ||
+                            (t.data || '').includes(queryLower);
+      if (!matchesSearch) return false;
+
+      if (searchScope === 'current' && effMiesiac && !t.data.startsWith(effMiesiac)) {
+        return false;
+      }
+
+      if (searchTypeFilter === 'wydatek' && t.kwota >= 0) return false;
+      if (searchTypeFilter === 'przychod' && t.kwota < 0) return false;
+
       return true;
     }
-    return false;
+
+    return t.data.startsWith(effMiesiac);
+  });
+
+  const posortowaneTransakcje = isSearching
+    ? [...wyswietlaneTransakcje].sort((a, b) => b.data.localeCompare(a.data))
+    : wyswietlaneTransakcje;
+
+  let sumaP = 0, sumaW = 0;
+  posortowaneTransakcje.forEach((t) => {
+    const kwotaAbs = Math.abs(t.kwota);
+    if (t.kwota > 0) sumaP += t.kwota; else sumaW += kwotaAbs;
   });
 
   const pct = sumaP > 0 ? ((sumaW / sumaP) * 100).toFixed(1) : (sumaW > 0 ? 100 : 0);
@@ -401,7 +469,193 @@ export default function FinancesView({ onRegisterBack }) {
               </div>
             </div>
           </div>
-          <div className="month-tabs">
+          {/* Pasek wyszukiwania transakcji i wydatków po nazwie */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            marginTop: '14px',
+            marginBottom: '10px'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              background: 'var(--card-bg)',
+              border: isSearching ? '1px solid var(--primary)' : '1px solid var(--border)',
+              borderRadius: '8px',
+              padding: '10px 18px',
+              transition: 'all 0.2s ease',
+              boxShadow: isSearching ? '0 0 14px rgba(0, 242, 255, 0.2)' : 'none'
+            }}>
+              <span style={{ fontSize: '1.15rem', color: isSearching ? 'var(--primary)' : 'var(--text-muted)', display: 'flex', alignItems: 'center', flexShrink: 0 }}>🔍</span>
+              <input
+                type="text"
+                placeholder="Wyszukaj transakcję"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{
+                  flex: 1,
+                  background: 'transparent',
+                  border: 'none',
+                  outline: 'none',
+                  color: 'var(--text)',
+                  fontSize: '13px',
+                  padding: '6px 12px',
+                  marginLeft: '6px'
+                }}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: '22px',
+                    height: '22px',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 0
+                  }}
+                  title="Wyczyść wyszukiwanie"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {isSearching && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px',
+                padding: '8px 12px',
+                background: 'rgba(0, 242, 255, 0.04)',
+                border: '1px solid rgba(0, 242, 255, 0.15)',
+                borderRadius: '8px',
+                fontSize: '12px'
+              }}>
+                <div style={{ color: 'var(--text)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>Wyniki wyszukiwania dla frazy <strong>„{searchQuery}”</strong>:</span>
+                  <span style={{
+                    color: 'var(--primary)',
+                    fontWeight: 'bold',
+                    background: 'rgba(0, 242, 255, 0.1)',
+                    padding: '1px 6px',
+                    borderRadius: '4px'
+                  }}>
+                    {posortowaneTransakcje.length} {posortowaneTransakcje.length === 1 ? 'pozycja' : (posortowaneTransakcje.length >= 2 && posortowaneTransakcje.length <= 4 ? 'pozycje' : 'pozycji')}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  {/* Przełącznik zakresu: Cała historia vs Tylko ten miesiąc */}
+                  <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', padding: '2px', border: '1px solid var(--border)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSearchScope('all')}
+                      style={{
+                        background: searchScope === 'all' ? 'var(--primary)' : 'transparent',
+                        color: searchScope === 'all' ? '#0b0e14' : 'var(--text-muted)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        padding: '3px 8px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease'
+                      }}
+                      title="Szukaj we wszystkich wprowadzonych miesiącach"
+                    >
+                      Cała historia
+                    </button>
+                    {effMiesiac && (
+                      <button
+                        type="button"
+                        onClick={() => setSearchScope('current')}
+                        style={{
+                          background: searchScope === 'current' ? 'var(--primary)' : 'transparent',
+                          color: searchScope === 'current' ? '#0b0e14' : 'var(--text-muted)',
+                          border: 'none',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          fontWeight: 'bold',
+                          padding: '3px 8px',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease'
+                        }}
+                        title={`Szukaj tylko w miesiącu ${effMiesiac}`}
+                      >
+                        Tylko {effMiesiac}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Filtr typu: Wszystkie / Tylko wydatki / Tylko przychody */}
+                  <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '6px', padding: '2px', border: '1px solid var(--border)' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSearchTypeFilter('all')}
+                      style={{
+                        background: searchTypeFilter === 'all' ? 'var(--primary)' : 'transparent',
+                        color: searchTypeFilter === 'all' ? '#0b0e14' : 'var(--text-muted)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        padding: '3px 8px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Wszystkie
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSearchTypeFilter('wydatek')}
+                      style={{
+                        background: searchTypeFilter === 'wydatek' ? 'var(--fin-red)' : 'transparent',
+                        color: searchTypeFilter === 'wydatek' ? '#fff' : 'var(--text-muted)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        padding: '3px 8px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Wydatki
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSearchTypeFilter('przychod')}
+                      style={{
+                        background: searchTypeFilter === 'przychod' ? 'var(--fin-green)' : 'transparent',
+                        color: searchTypeFilter === 'przychod' ? '#0b0e14' : 'var(--text-muted)',
+                        border: 'none',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: 'bold',
+                        padding: '3px 8px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Przychody
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="month-tabs" style={{ display: isSearching && searchScope === 'all' ? 'none' : 'flex' }}>
             {miesiace.map(m => (
               <button key={m} className={`month-btn ${m === effMiesiac ? 'active' : ''}`} onClick={() => setAktywnyMiesiac(m)}>{m}</button>
             ))}
@@ -409,33 +663,72 @@ export default function FinancesView({ onRegisterBack }) {
 
           <div className="grid-2col">
             <div className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
                 <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0, textTransform: 'uppercase' }}>
-                  HISTORIA TRANSAKCJI (PODWÓJNE KLIKNIĘCIE USUWA)
+                  {isSearching 
+                    ? `WYNIKI WYSZUKIWANIA (${posortowaneTransakcje.length})` 
+                    : 'HISTORIA TRANSAKCJI (PODWÓJNE KLIKNIĘCIE USUWA)'}
                 </h3>
-                <button 
-                  type="button" 
-                  className={`btn-history-edit ${editingTxIndex !== null ? 'active' : ''}`}
-                  onClick={() => {
-                    if (editingTxIndex !== null) {
-                      anulujEdycjeTransakcji();
-                    } else if (filtrowaneTransakcje.length > 0) {
-                      const firstIdx = baza.transakcje.indexOf(filtrowaneTransakcje[0]);
-                      edytujTransakcje(firstIdx);
-                    } else {
-                      setIsFormOpen(true);
-                    }
-                  }}
-                  title="Edytuj wpis z historii"
-                >
-                  Edytuj
-                </button>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {isSearching && (
+                    <button
+                      type="button"
+                      className="btn-history-edit"
+                      onClick={() => setSearchQuery('')}
+                      title="Wyczyść wyszukiwanie"
+                    >
+                      ✕ Resetuj
+                    </button>
+                  )}
+                  <button 
+                    type="button" 
+                    className={`btn-history-edit ${editingTxIndex !== null ? 'active' : ''}`}
+                    onClick={() => {
+                      if (editingTxIndex !== null) {
+                        anulujEdycjeTransakcji();
+                      } else if (posortowaneTransakcje.length > 0) {
+                        const firstIdx = baza.transakcje.indexOf(posortowaneTransakcje[0]);
+                        edytujTransakcje(firstIdx);
+                      } else {
+                        setIsFormOpen(true);
+                      }
+                    }}
+                    title="Edytuj wpis z historii"
+                  >
+                    Edytuj
+                  </button>
+                </div>
               </div>
               <div className="history-list">
-                {filtrowaneTransakcje.length === 0 ? (
-                  <div style={{ color: 'var(--text-muted)', padding: '20px' }}>Brak wpisów w tym okresie.</div>
+                {posortowaneTransakcje.length === 0 ? (
+                  <div style={{ color: 'var(--text-muted)', padding: '24px', textAlign: 'center' }}>
+                    {isSearching ? (
+                      <>
+                        Nie znaleziono pozycji pasujących do frazy: <strong>„{searchQuery}”</strong>
+                        <div style={{ marginTop: '10px' }}>
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            style={{
+                              background: 'transparent',
+                              border: '1px solid var(--border)',
+                              color: 'var(--primary)',
+                              padding: '5px 12px',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              fontSize: '12px'
+                            }}
+                          >
+                            Wyczyść wyszukiwanie
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      'Brak wpisów w tym okresie.'
+                    )}
+                  </div>
                 ) : (
-                  filtrowaneTransakcje.map((t, index) => {
+                  posortowaneTransakcje.map((t, index) => {
                     const globalIdx = baza.transakcje.indexOf(t);
                     const isEditing = editingTxIndex === globalIdx;
                     return (
@@ -446,14 +739,36 @@ export default function FinancesView({ onRegisterBack }) {
                           color: t.kwota < 0 ? 'var(--fin-red)' : 'var(--fin-green)',
                           borderColor: isEditing ? '#00f2ff' : undefined,
                           backgroundColor: isEditing ? 'rgba(0, 242, 255, 0.08)' : undefined,
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: '12px'
                         }}
                         onClick={() => edytujTransakcje(globalIdx)}
                         onDoubleClick={() => usunTransakcje(globalIdx)}
                         title="Kliknij, aby edytować. Podwójne kliknięcie usuwa."
                       >
-                        <span>{t.data} | {t.kwota < 0 ? '-' : '+'} {Math.abs(t.kwota).toFixed(2)} zł</span>
-                        <span>{t.opis}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                          <span style={{ 
+                            color: '#ffffff', 
+                            fontSize: '12px', 
+                            fontWeight: '600',
+                            letterSpacing: '0.3px',
+                            background: 'rgba(255, 255, 255, 0.07)', 
+                            padding: '2px 8px', 
+                            borderRadius: '4px',
+                            border: '1px solid rgba(255, 255, 255, 0.12)'
+                          }}>
+                            {formatujDateDDMMYYYY(t.data)}
+                          </span>
+                          <span style={{ fontWeight: 'bold' }}>
+                            {t.kwota < 0 ? '-' : '+'} {Math.abs(t.kwota).toFixed(2)} zł
+                          </span>
+                        </span>
+                        <span style={{ color: 'var(--text)', textAlign: 'right', wordBreak: 'break-word', flex: 1, marginLeft: '10px' }}>
+                          <HighlightMatch text={t.opis} query={searchQuery.trim()} />
+                        </span>
                       </div>
                     );
                   })
@@ -463,7 +778,7 @@ export default function FinancesView({ onRegisterBack }) {
 
             <div className="card">
               <h3 style={{ fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px', textAlign: 'center', textTransform: 'uppercase' }}>
-                PODSUMOWANIE MIESIĄCA
+                {isSearching ? `PODSUMOWANIE WYNIKÓW (${searchScope === 'all' ? 'CAŁA HISTORIA' : effMiesiac})` : 'PODSUMOWANIE MIESIĄCA'}
               </h3>
               <div className="tiles-container">
                 <div className="tile-fin">
