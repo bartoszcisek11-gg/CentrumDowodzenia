@@ -2551,6 +2551,76 @@ main {
   color: #ffffff;
 }
 
+/* Style dla widgetu Gmail */
+.gmail-message-card:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border-color: rgba(0, 242, 255, 0.45) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+.gmail-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(255, 255, 255, 0.12);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.btn-gmail-action:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+.btn-gmail-logout {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  padding: 3px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.2;
+}
+
+.btn-gmail-logout:hover {
+  border-color: #00f2ff !important;
+  color: #00f2ff !important;
+  background: rgba(0, 242, 255, 0.08) !important;
+}
+
+.btn-gmail-refresh {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 3px 9px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  line-height: 1.2;
+}
+
+.btn-gmail-refresh:hover:not(:disabled) {
+  border-color: #00f2ff !important;
+  color: #00f2ff !important;
+  background: rgba(0, 242, 255, 0.08) !important;
+}
+
+.btn-gmail-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 
 
 

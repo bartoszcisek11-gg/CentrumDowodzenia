@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import ICloudCalendar from './ICloudCalendar';
+import GmailWidget from './GmailWidget';
 import Reminders from './Reminders';
 import RadioZet from './RadioZet';
 import RadioIcon from './RadioIcon';
@@ -55,7 +55,7 @@ function ResizableWidget({
 }) {
   const [size, setSize] = useState(() => {
     if (!storageKey) return { width: defaultWidth, height: defaultHeight };
-    const saved = localStorage.getItem(storageKey);
+    const saved = localStorage.getItem(storageKey) || (storageKey === 'dashboard_gmail_size' ? localStorage.getItem('dashboard_calendar_size') : null);
     if (saved) {
       try { return JSON.parse(saved); } catch (e) {}
     }
@@ -209,20 +209,22 @@ function ResizableWidget({
 }
 
 export default function MainDashboard({ onOpenApp }) {
-  // Przechowywanie kolejności głównych sekcji (Kafelki, Kalendarz, Przypomnienia, Radio ZET)
+  // Przechowywanie kolejności głównych sekcji (Kafelki, Gmail, Przypomnienia, Radio ZET)
   const [sectionsOrder, setSectionsOrder] = useState(() => {
     try {
       const saved = JSON.parse(localStorage.getItem('dashboard_sections_order'));
       if (saved && Array.isArray(saved) && saved.length > 0) {
-        const allowed = ['tiles', 'calendar', 'reminders', 'radiozet'];
-        const filtered = saved.filter(s => allowed.includes(s));
+        // Migracja: zamień 'calendar' na 'gmail'
+        const migrated = saved.map(s => s === 'calendar' ? 'gmail' : s);
+        const allowed = ['tiles', 'gmail', 'reminders', 'radiozet'];
+        const filtered = migrated.filter(s => allowed.includes(s));
         allowed.forEach(s => { if (!filtered.includes(s)) filtered.push(s); });
         return filtered;
       }
     } catch (e) {
       console.error('Błąd odczytu dashboard_sections_order:', e);
     }
-    return ['tiles', 'calendar', 'reminders', 'radiozet'];
+    return ['tiles', 'gmail', 'reminders', 'radiozet'];
   });
 
   const [draggedSection, setDraggedSection] = useState(null);
@@ -658,13 +660,21 @@ export default function MainDashboard({ onOpenApp }) {
       );
     }
 
-    if (sectionId === 'calendar') {
+    if (sectionId === 'gmail' || sectionId === 'calendar') {
       return (
         <ResizableWidget
-          key="section-calendar"
-          id="calendar"
-          title="Kalendarz iCloud"
-          icon="📅"
+          key="section-gmail"
+          id="gmail"
+          title="Gmail - Nieprzeczytane wiadomości"
+          icon={
+            <svg width="20" height="20" viewBox="0 0 512 512" style={{ display: 'inline-block', verticalAlign: 'middle' }}>
+              <path d="M34.9 448h81.5V250.2L0 163v250.2C0 432.5 15.7 448 34.9 448" fill="#4285f4"/>
+              <path d="M395.6 448h81.5c19.3 0 34.9-15.7 34.9-34.9V163l-116.4 87.3" fill="#34a853"/>
+              <path d="M395.6 99v151.3L512 163v-46.5c0-43.2-49.3-67.8-83.8-41.9" fill="#fbbc04"/>
+              <path d="M116.4 250.2V99L256 203.7 395.6 99v151.3L256 355" fill="#ea4335"/>
+              <path d="M0 116.4V163l116.4 87.3V99L83.8 74.5C49.2 48.6 0 73.2 0 116.4" fill="#c5221f"/>
+            </svg>
+          }
           onSectionDragStart={handleSectionDragStart}
           onSectionDragOver={handleSectionDragOver}
           onSectionDragLeave={handleSectionDragLeave}
@@ -673,16 +683,16 @@ export default function MainDashboard({ onOpenApp }) {
           onSectionTouchStart={handleSectionTouchStart}
           onSectionTouchMove={handleSectionTouchMove}
           onSectionTouchEnd={handleSectionTouchEnd}
-          isSectionDragging={draggedSection === 'calendar'}
-          isSectionDragOver={dragOverSection === 'calendar'}
+          isSectionDragging={draggedSection === 'gmail' || draggedSection === 'calendar'}
+          isSectionDragOver={dragOverSection === 'gmail' || dragOverSection === 'calendar'}
           defaultWidth="100%"
           defaultHeight="480px"
           minWidth={300}
           minHeight={300}
-          storageKey="dashboard_calendar_size"
+          storageKey="dashboard_gmail_size"
           allowResize={true}
         >
-          <ICloudCalendar />
+          <GmailWidget />
         </ResizableWidget>
       );
     }

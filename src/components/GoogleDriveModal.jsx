@@ -209,10 +209,13 @@ export default function GoogleDriveModal({ isOpen, onClose, onDataRestored }) {
         }}>
           <div>
             <div style={{ fontWeight: 'bold', color: isConnected ? '#3fb950' : '#8b949e' }}>
-              {isConnected ? '🟢 Połączono z Google Drive' : '⚪ Brak aktywnego połączenia'}
+              {isConnected ? '🟢 Połączono z Google (Dysk + Gmail)' : '⚪ Brak aktywnego połączenia'}
             </div>
             {userEmail && <div style={{ fontSize: '0.85rem', color: '#8b949e' }}>{userEmail}</div>}
-            {lastSync && <div style={{ fontSize: '0.8rem', color: '#8b949e', marginTop: '4px' }}>Ostatnia synchro: {lastSync}</div>}
+            <div style={{ fontSize: '0.75rem', color: '#58a6ff', marginTop: '3px' }}>
+              ✉️ Dysk Google i Gmail synchronizują się wspólnie
+            </div>
+            {lastSync && <div style={{ fontSize: '0.8rem', color: '#8b949e', marginTop: '2px' }}>Ostatnia synchro: {lastSync}</div>}
           </div>
 
           {isConnected ? (

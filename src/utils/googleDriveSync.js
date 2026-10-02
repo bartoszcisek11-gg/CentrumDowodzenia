@@ -2,7 +2,8 @@
 // Bezpieczna synchronizacja pliku "centrumdowodzenia.json" w Dysku Google
 
 const DRIVE_FILE_NAME = 'centrumdowodzenia.json';
-const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+// Zakresy uprawnień: Dysk Google (do pliku centrumdowodzenia.json) oraz Gmail (do podglądu nieprzeczytanych wiadomości)
+const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/gmail.readonly';
 const DEFAULT_CLIENT_ID = '242774672962-gvuvikc5nbn30r4b55hqvvdfhqsqugm9.apps.googleusercontent.com';
 
 let tokenClient = null;
@@ -80,21 +81,52 @@ export async function requestDriveToken(clientId) {
             return;
           }
           if (response.access_token) {
-            saveAccessToken(response.access_token, response.expires_in || 3600);
+            const expiresIn = response.expires_in || 3600;
+            saveAccessToken(response.access_token, expiresIn);
             
-            // Spróbuj pobrać e-mail użytkownika
+            // Jednoczesny zapis tokena dla widgetu Gmail
+            const expiryMs = (Date.now() + expiresIn * 1000).toString();
+            localStorage.setItem('gmail_access_token', response.access_token);
+            localStorage.setItem('gmail_token_expiry', expiryMs);
+            
+            // Spróbuj pobrać e-mail użytkownika z OAuth lub Gmail Profile
             try {
+              let userEmail = '';
               const userInfoRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
                 headers: { Authorization: `Bearer ${response.access_token}` }
               });
               if (userInfoRes.ok) {
                 const info = await userInfoRes.json();
                 if (info.email) {
-                  localStorage.setItem('gdrive_user_email', info.email);
+                  userEmail = info.email;
                 }
+              }
+
+              if (!userEmail) {
+                const profileRes = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/profile', {
+                  headers: { Authorization: `Bearer ${response.access_token}` }
+                });
+                if (profileRes.ok) {
+                  const prof = await profileRes.json();
+                  if (prof.emailAddress) {
+                    userEmail = prof.emailAddress;
+                  }
+                }
+              }
+
+              if (userEmail) {
+                localStorage.setItem('gdrive_user_email', userEmail);
+                localStorage.setItem('gmail_user_email', userEmail);
               }
             } catch (e) {
               console.warn('Nie udało się pobrać adresu e-mail:', e);
+            }
+
+            // Poinformuj widget Gmail o nowym połączeniu
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('gmail-auth-change', {
+                detail: { token: response.access_token }
+              }));
             }
 
             resolve(response.access_token);
