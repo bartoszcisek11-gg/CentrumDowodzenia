@@ -240,7 +240,7 @@ export function InvestmentChart({ inwestycje = [] }) {
 
     const monthlyNet = {};
     inwestycje.forEach(inv => {
-      const m = inv.miesiac || 'Inne';
+      const m = (inv.miesiac || 'Inne').trim();
       if (!monthlyNet[m]) monthlyNet[m] = 0;
       const kwotaAbs = Math.abs(parseFloat(inv.kwota) || 0);
       if (inv.typ === 'Profit' || inv.kwota > 0) {
@@ -250,23 +250,77 @@ export function InvestmentChart({ inwestycje = [] }) {
       }
     });
 
-    const sortedMonths = Object.keys(monthlyNet).sort();
+    const getMonthsRange = (startStr, endStr) => {
+      const result = [];
+      let [sY, sM] = startStr.split('-').map(Number);
+      const [eY, eM] = endStr.split('-').map(Number);
 
-    const POLISH_MONTHS = [
-      'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień',
-      'Październik', 'Listopad', 'Grudzień', 'Styczeń', 'Luty', 'Marzec'
-    ];
+      while (sY < eY || (sY === eY && sM <= eM)) {
+        const mStr = `${sY}-${String(sM).padStart(2, '0')}`;
+        result.push(mStr);
+        sM++;
+        if (sM > 12) {
+          sM = 1;
+          sY++;
+        }
+      }
+      return result;
+    };
+
+    const validMonthKeys = Object.keys(monthlyNet)
+      .filter(k => /^\d{4}-\d{2}$/.test(k))
+      .sort();
+
+    let sortedMonths = [];
+    if (validMonthKeys.length > 0) {
+      const earliestRecorded = validMonthKeys[0];
+      const latestRecorded = validMonthKeys[validMonthKeys.length - 1];
+      const currentMonth = new Date().toISOString().substring(0, 7);
+
+      let targetEndMonth = latestRecorded;
+      if (currentMonth > latestRecorded) {
+        const [curY, curM] = currentMonth.split('-').map(Number);
+        const [latY, latM] = latestRecorded.split('-').map(Number);
+        const diffMonths = (curY - latY) * 12 + (curM - latM);
+        // Jeśli bieżący miesiąc jest w tym samym okresie (do 6 miesięcy), uwzględniamy miesiące do bieżącego
+        if (diffMonths <= 6) {
+          targetEndMonth = currentMonth;
+        }
+      }
+
+      sortedMonths = getMonthsRange(earliestRecorded, targetEndMonth);
+
+      // Dołączamy ewentualne niestandardowe klucze (np. 'Inne')
+      const otherKeys = Object.keys(monthlyNet).filter(k => !/^\d{4}-\d{2}$/.test(k));
+      if (otherKeys.length > 0) {
+        sortedMonths.push(...otherKeys.sort());
+      }
+    } else {
+      sortedMonths = Object.keys(monthlyNet).sort();
+    }
+
     const MONTH_NAMES_PL = [
       'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
       'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
     ];
 
+    const yearsSet = new Set(
+      sortedMonths
+        .filter(m => /^\d{4}-\d{2}$/.test(m))
+        .map(m => m.split('-')[0])
+    );
+    const hasMultipleYears = yearsSet.size > 1;
+
     const formatMonthLabel = (mStr) => {
       if (!mStr) return '';
       const parts = mStr.split('-');
       if (parts.length === 2) {
+        const year = parts[0];
         const monthIdx = parseInt(parts[1], 10) - 1;
         if (monthIdx >= 0 && monthIdx < 12) {
+          if (hasMultipleYears) {
+            return `${MONTH_NAMES_PL[monthIdx]} '${year.slice(-2)}`;
+          }
           return MONTH_NAMES_PL[monthIdx];
         }
       }
@@ -281,16 +335,26 @@ export function InvestmentChart({ inwestycje = [] }) {
     const labels = [];
 
     sortedMonths.forEach(m => {
-      const change = monthlyNet[m];
+      const change = monthlyNet[m] || 0;
       const start = currentTotal;
       const end = currentTotal + change;
       currentTotal = end;
 
       barData.push([Math.min(start, end), Math.max(start, end)]);
 
-      const isPositive = change >= 0;
-      backgroundColors.push(isPositive ? '#3b82f6' : '#f97316');
-      borderColors.push(isPositive ? '#2563eb' : '#ea580c');
+      const isZero = Math.abs(change) < 0.0001;
+      const isPositive = change > 0.0001;
+
+      if (isZero) {
+        backgroundColors.push('rgba(148, 163, 184, 0.25)');
+        borderColors.push('#94a3b8');
+      } else if (isPositive) {
+        backgroundColors.push('#3b82f6');
+        borderColors.push('#2563eb');
+      } else {
+        backgroundColors.push('#f97316');
+        borderColors.push('#ea580c');
+      }
 
       labels.push(formatMonthLabel(m));
 
@@ -299,6 +363,7 @@ export function InvestmentChart({ inwestycje = [] }) {
         change,
         start,
         end,
+        isZero,
         isPositive
       });
     });
@@ -311,28 +376,83 @@ export function InvestmentChart({ inwestycje = [] }) {
 
         const meta = chart.getDatasetMeta(0);
         const bars = meta.data;
+        const yScale = chart.scales.y;
 
-        // Draw value labels above / below bars
-        ctx.font = 'bold 11px sans-serif';
-        ctx.textAlign = 'center';
+        // 1. Rysowanie linii łączących (connector lines) pomiędzy kolejnymi miesiącami
+        for (let i = 0; i < bars.length - 1; i++) {
+          const currentBar = bars[i];
+          const nextBar = bars[i + 1];
+          const currentItem = barItems[i];
 
+          if (currentBar && nextBar && currentItem) {
+            const levelY = yScale.getPixelForValue(currentItem.end);
+            const curHalfW = (currentBar.width ? currentBar.width : 20) * 0.44;
+            const nextHalfW = (nextBar.width ? nextBar.width : 20) * 0.44;
+
+            const startX = currentBar.x + curHalfW;
+            const endX = nextBar.x - nextHalfW;
+
+            if (endX > startX) {
+              ctx.save();
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+              ctx.lineWidth = 1.5;
+              ctx.setLineDash([3, 3]);
+              ctx.beginPath();
+              ctx.moveTo(startX, levelY);
+              ctx.lineTo(endX, levelY);
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+        }
+
+        // 2. Rysowanie wskaźnika poziomu dla miesięcy bez zmian (0 zł) oraz etykiet wartości
         bars.forEach((bar, index) => {
           const item = barItems[index];
           if (!item) return;
 
-          const changeFormatted = (item.change >= 0 ? '+' : '') + item.change.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
+          const levelY = yScale.getPixelForValue(item.end);
+          const startY = yScale.getPixelForValue(item.start);
+          const topY = Math.min(levelY, startY);
+          const bottomY = Math.max(levelY, startY);
 
-          const topY = Math.min(bar.y, bar.base);
-          const bottomY = Math.max(bar.y, bar.base);
+          if (item.isZero) {
+            // Miesiąc bez wpisu / zmian: wyraźna pozioma belka na stałym poziomie
+            const halfW = (bar.width ? bar.width : 20) * 0.44;
+            ctx.save();
+            ctx.strokeStyle = '#94a3b8';
+            ctx.lineWidth = 3.5;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(bar.x - halfW, levelY);
+            ctx.lineTo(bar.x + halfW, levelY);
+            ctx.stroke();
 
-          if (item.isPositive) {
+            // Etykieta "0 zł"
+            ctx.font = '600 10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'bottom';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText('0 zł', bar.x, levelY - 6);
+            ctx.restore();
+          } else if (item.isPositive) {
+            const changeFormatted = '+' + item.change.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
+            ctx.save();
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
             ctx.fillStyle = '#ffffff';
             ctx.textBaseline = 'bottom';
             ctx.fillText(changeFormatted, bar.x, topY - 6);
+            ctx.restore();
           } else {
+            const changeFormatted = item.change.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
+            ctx.save();
+            ctx.font = 'bold 11px sans-serif';
+            ctx.textAlign = 'center';
             ctx.fillStyle = '#ff944d';
             ctx.textBaseline = 'top';
             ctx.fillText(changeFormatted, bar.x, bottomY + 6);
+            ctx.restore();
           }
         });
 
@@ -360,6 +480,10 @@ export function InvestmentChart({ inwestycje = [] }) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+          mode: 'index',
+          intersect: false
+        },
         scales: {
           x: {
             ticks: { color: '#f5f6fa', font: { size: 12, weight: '500' } },
@@ -391,8 +515,14 @@ export function InvestmentChart({ inwestycje = [] }) {
               label: (context) => {
                 const idx = context.dataIndex;
                 const item = barItems[idx];
-                const changeFormatted = (item.change >= 0 ? '+' : '') + item.change.toFixed(2) + ' zł';
-                const endFormatted = item.end.toFixed(2) + ' zł';
+                const endFormatted = item.end.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
+                if (item.isZero) {
+                  return [
+                    ` Wynik miesiąca: 0,00 zł (bez zmian)`,
+                    ` Stan skumulowany: ${endFormatted}`
+                  ];
+                }
+                const changeFormatted = (item.change >= 0 ? '+' : '') + item.change.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' zł';
                 return [
                   ` Wynik miesiąca: ${changeFormatted}`,
                   ` Stan skumulowany: ${endFormatted}`
